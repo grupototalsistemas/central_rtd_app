@@ -1,0 +1,29 @@
+# Frontend Dockerfile - Next.js com Tailwind
+FROM node:20.18.1-alpine
+
+ENV TZ=America/Sao_Paulo
+
+# Instala dependências do sistema e configura timezone
+RUN apk add --no-cache tzdata libc6-compat
+RUN cp /usr/share/zoneinfo/${TZ} /etc/localtime && echo "${TZ}" > /etc/timezone
+
+# Define o diretório de trabalho
+WORKDIR /app
+
+# Copia arquivos de dependências
+COPY package*.json ./
+
+# Instala dependências
+RUN npm cache clean --force
+
+# Instala dependências de desenvolvimento para o modo dev
+RUN npm install
+
+# Copia o código fonte
+COPY . .
+
+# Expõe a porta
+EXPOSE 3000
+
+# Comando padrão
+CMD ["npm","run","dev"]
