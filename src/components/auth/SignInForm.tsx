@@ -3,9 +3,12 @@
 import Input from '@/components/form/input/InputField';
 import Label from '@/components/form/Label';
 import Button from '@/components/ui/button/Button';
+import TwoFactorAuthenticationScreen from '@/components/auth/twoFactorAuthentication';
 import { EyeCloseIcon, EyeIcon } from '@/icons';
 
 import { useState } from 'react';
+
+// const ENABLE_2FA_TEST = true; // Variável para testar o 2FA enquanto não possuímos o back
 
 interface SignInFormProps {
   onSubmitLogin: (login: string, senha: string) => void;
@@ -25,6 +28,7 @@ export default function SignInForm({
   const [showPassword, setShowPassword] = useState(false);
   const [login, setLogin] = useState('');
   const [password, setPassword] = useState('');
+  // const [showTwoFactorScreen, setShowTwoFactorScreen] = useState(false);
 
   const handlesign = (event?: React.FormEvent<HTMLFormElement>) => {
     event?.preventDefault();
@@ -33,11 +37,24 @@ export default function SignInForm({
       return;
     }
 
+    // if (ENABLE_2FA_TEST) {
+    //   setShowTwoFactorScreen(true);
+    //   return;
+    // }
+
     onSubmitLogin(login, password);
   };
 
+  // if (showTwoFactorScreen) {
+  //   return (
+  //     <TwoFactorAuthenticationScreen
+  //       onBackToLogin={() => setShowTwoFactorScreen(false)}
+  //     />
+  //   );
+  // }
+
   return (
-    <div className="flex w-full flex-1 flex-col bg-[var(--background)] lg:w-1/2 dark:bg-[var(--dark-background)]">
+    <div className="flex w-full flex-1 flex-col bg-(--background) lg:w-1/2 dark:bg-[var(--dark-background)]">
       <div className="mx-auto flex flex-1 flex-col justify-center">
         <div>
           <div className="mb-5 sm:mb-8">
@@ -79,7 +96,7 @@ export default function SignInForm({
                     placeholder="Sua senha"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    className="w-full rounded border bg-[var(--cor-edit)] px-4 py-2 text-[var(--cor-texto)] focus:border-[var(--cor-button-hover)] focus:outline-none dark:bg-[var(--dark-cor-edit)] dark:text-[var(--dark-cor-texto)] dark:focus:border-[var(--dark-cor-button-hover)]"
+                    className="w-full rounded border bg-(--cor-edit) px-4 py-2 text-(--cor-texto) focus:border-(--cor-button-hover) focus:outline-none dark:bg-(--dark-cor-edit) dark:text-(--dark-cor-texto) dark:focus:border-(--dark-cor-button-hover)"
                   />
                   <span
                     onClick={() => setShowPassword(!showPassword)}
@@ -96,7 +113,7 @@ export default function SignInForm({
 
               <div className="flex flex-col gap-2">
                 <Button
-                  className="w-full bg-[var(--cor-button-hover)] font-semibold text-[var(--texto-button)] uppercase hover:opacity-90 dark:bg-[var(--dark-cor-button-hover)] dark:text-[var(--dark-texto-button)]"
+                  className="w-full  bg-[#004a96] font-semibold text-(--texto-button) uppercase hover:opacity-80"
                   size="sm"
                   disabled={
                     loading || !login || !password || password.length < 4
@@ -113,7 +130,7 @@ export default function SignInForm({
 
           <div className="mt-5">
             {authMudarTela ? (
-              <p className="text-center text-sm font-normal text-[var(--cor-texto)] sm:text-start dark:text-[var(--dark-cor-texto)]">
+              <p className="text-center text-sm font-normal text-(--cor-texto) sm:text-start dark:text-(--dark-cor-texto)">
                 Tentar logar com certificados?{' '}
                 <button
                   onClick={() => handleChangeTela?.(1)}

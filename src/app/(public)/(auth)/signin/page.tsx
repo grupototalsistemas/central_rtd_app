@@ -34,6 +34,6 @@ export default function SignIn() {
   };
 
   return (
-    <SignInForm onSubmitLogin={handleLogin} error={error} loading={loading} />
+    <SignInForm onSubmitLogin={handleLogin} error={error} loading={loading}/>
   );
 }
