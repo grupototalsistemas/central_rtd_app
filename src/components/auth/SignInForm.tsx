@@ -1,14 +1,14 @@
 'use client';
 
+import TwoFactorAuthenticationScreen from '@/components/auth/twoFactorAuthentication';
 import Input from '@/components/form/input/InputField';
 import Label from '@/components/form/Label';
 import Button from '@/components/ui/button/Button';
-import TwoFactorAuthenticationScreen from '@/components/auth/twoFactorAuthentication';
 import { EyeCloseIcon, EyeIcon } from '@/icons';
 
 import { useState } from 'react';
 
-// const ENABLE_2FA_TEST = true; // Variável para testar o 2FA enquanto não possuímos o back
+const ENABLE_2FA_TEST = true; // Variável para testar o 2FA enquanto não possuímos o back
 
 interface SignInFormProps {
   onSubmitLogin: (login: string, senha: string) => void;
@@ -28,7 +28,7 @@ export default function SignInForm({
   const [showPassword, setShowPassword] = useState(false);
   const [login, setLogin] = useState('');
   const [password, setPassword] = useState('');
-  // const [showTwoFactorScreen, setShowTwoFactorScreen] = useState(false);
+  const [showTwoFactorScreen, setShowTwoFactorScreen] = useState(false);
 
   const handlesign = (event?: React.FormEvent<HTMLFormElement>) => {
     event?.preventDefault();
@@ -37,21 +37,21 @@ export default function SignInForm({
       return;
     }
 
-    // if (ENABLE_2FA_TEST) {
-    //   setShowTwoFactorScreen(true);
-    //   return;
-    // }
+    if (ENABLE_2FA_TEST) {
+      setShowTwoFactorScreen(true);
+      return;
+    }
 
     onSubmitLogin(login, password);
   };
 
-  // if (showTwoFactorScreen) {
-  //   return (
-  //     <TwoFactorAuthenticationScreen
-  //       onBackToLogin={() => setShowTwoFactorScreen(false)}
-  //     />
-  //   );
-  // }
+  if (showTwoFactorScreen) {
+    return (
+      <TwoFactorAuthenticationScreen
+        onBackToLogin={() => setShowTwoFactorScreen(false)}
+      />
+    );
+  }
 
   return (
     <div className="flex w-full flex-1 flex-col bg-(--background) lg:w-1/2 dark:bg-[var(--dark-background)]">
@@ -113,7 +113,7 @@ export default function SignInForm({
 
               <div className="flex flex-col gap-2">
                 <Button
-                  className="w-full  bg-[#004a96] font-semibold text-(--texto-button) uppercase hover:opacity-80"
+                  className="w-full bg-[#004a96] font-semibold text-(--texto-button) uppercase hover:opacity-80"
                   size="sm"
                   disabled={
                     loading || !login || !password || password.length < 4
