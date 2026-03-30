@@ -17,14 +17,14 @@ export default function SuportePage() {
   const [arquivos, setArquivos] = useState<File[]>([]);
   const { pessoa_usuario } = useSelector((state: RootState) => state.usuario);
 
-  useEffect(() => {
-    const ensureValidUser = async () => {
-      const parsedId = Number(pessoa_usuario?.id_pessoa_usuario || 0);
-      await validateUserLoggedScreenLogout(parsedId);
-    };
+  // useEffect(() => {
+  //   const ensureValidUser = async () => {
+  //     const parsedId = Number(pessoa_usuario?.id_pessoa_usuario || 0);
+  //     await validateUserLoggedScreenLogout(parsedId);
+  //   };
 
-    ensureValidUser();
-  }, [pessoa_usuario?.id_pessoa_usuario]);
+  //   ensureValidUser();
+  // }, [pessoa_usuario?.id_pessoa_usuario]);
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFiles = event.target.files;

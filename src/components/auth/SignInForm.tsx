@@ -8,7 +8,7 @@ import { EyeCloseIcon, EyeIcon } from '@/icons';
 
 import { useState } from 'react';
 
-const ENABLE_2FA_TEST = true; // Variável para testar o 2FA enquanto não possuímos o back
+const ENABLE_2FA_TEST = false; // Variável para testar o 2FA enquanto não possuímos o back
 
 interface SignInFormProps {
   onSubmitLogin: (login: string, senha: string) => void;

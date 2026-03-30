@@ -24,7 +24,7 @@ export default function SignIn() {
       dispatch(setLogado(true));
       dispatch(setPessoaUsuario(response.pessoa_usuario as PessoaUsuario));
       dispatch(setModulosPerfilPermissoes(response.permissoes));
-      router.push('/suport');
+      router.push('/dashboard');
     } catch (err) {
       console.error(err);
       setError('Falha no login. Verifique seu usuario e senha.');
