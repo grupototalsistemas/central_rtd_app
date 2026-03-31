@@ -1,15 +1,33 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" role="img" aria-label="RTD">
   <style>
-    .letter {
-      fill: #b42318;
-      font-family: 'Noto Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
-      font-weight: 700;
-      font-size: 95px;
+    .glyph {
+      font-family: 'Noto Sans', 'Segoe UI', system-ui, sans-serif;
+      font-weight: 900;
+      font-size: 124px;
+      text-rendering: geometricPrecision;
     }
+
+    /* Em abas claras, escurece um pouco para manter contraste. */
+    .r {
+      fill: #003f80;
+    }
+
+    .td {
+      fill: #d68618;
+      letter-spacing: -2px;
+    }
+
     @media (prefers-color-scheme: dark) {
-      .letter { fill: #fda29b; }
+      .r {
+        fill: #004a96;
+      }
+
+      .td {
+        fill: #f9a526;
+      }
     }
   </style>
-  
-  <text class="letter" x="50" y="68" text-anchor="middle" dominant-baseline="middle">C</text>
+
+  <text class="glyph r" x="20" y="184">R</text>
+  <text class="glyph td" x="104" y="184">TD</text>
 </svg>
