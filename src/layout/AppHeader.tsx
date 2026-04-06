@@ -54,7 +54,7 @@ const AppHeader: React.FC = React.memo(() => {
           </button>
 
           {/* Seletor de empresa - aparece se tiver mais de uma empresa, senão mostra só o nome */}
-          <CompanySelector />
+          {/* <CompanySelector /> */}
 
           <div className="flex items-center md:hidden">
             <button
