@@ -1,6 +1,8 @@
 import { ModulosPerfilPermissoes } from '@/types/perfilPermissao';
 import api from './api';
 
+const SISTEMA_ID = Number(process.env.NEXT_PUBLIC_ID_SISTEMA || 2);
+
 interface LoginPayload {
   login: string;
   senha: string;
@@ -31,7 +33,7 @@ export async function login({
   const response = await api.post<LoginResponse>('/auth/login_senha', {
     login,
     senha,
-    sistema: 2,
+    sistema: SISTEMA_ID,
   });
   return response.data;
 }
@@ -46,7 +48,7 @@ const switchCompany = async (
   id_pessoa_juridica_perfil: string
 ) => {
   const response = await api.get(
-    `/pessoas-juridicas-perfis/${id_pessoa_juridica_perfil}/modulos-permissoes?id_sistema=2&id_pessoa_juridica=${id_pessoa_juridica}`
+    `/pessoas-juridicas-perfis/${id_pessoa_juridica_perfil}/modulos-permissoes?id_sistema=${SISTEMA_ID}&id_pessoa_juridica=${id_pessoa_juridica}`
   );
   return response.data;
 };
