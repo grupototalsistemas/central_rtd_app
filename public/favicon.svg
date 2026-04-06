@@ -1,33 +1,13 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" role="img" aria-label="RTD">
-  <style>
-    .glyph {
-      font-family: 'Noto Sans', 'Segoe UI', system-ui, sans-serif;
-      font-weight: 900;
-      font-size: 124px;
-      text-rendering: geometricPrecision;
-    }
-
-    /* Em abas claras, escurece um pouco para manter contraste. */
-    .r {
-      fill: #003f80;
-    }
-
-    .td {
-      fill: #d68618;
-      letter-spacing: -2px;
-    }
-
-    @media (prefers-color-scheme: dark) {
-      .r {
-        fill: #004a96;
-      }
-
-      .td {
-        fill: #f9a526;
-      }
-    }
-  </style>
-
-  <text class="glyph r" x="20" y="184">R</text>
-  <text class="glyph td" x="104" y="184">TD</text>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="RTD">
+  <g
+    fill="#ffff"
+    font-family="'Segoe UI', 'Arial Black', Arial, sans-serif"
+    font-size="34"
+    font-weight="700"
+    text-rendering="geometricPrecision"
+  >
+    <text x="0" y="50">R</text>
+    <text x="21" y="50">T</text>
+    <text x="40" y="50">D</text>
+  </g>
 </svg>

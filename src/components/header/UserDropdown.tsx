@@ -165,7 +165,10 @@ export default function UserDropdown() {
               {funcionario || 'Funcionário'}
             </span>
             <span className="block text-sm text-gray-500 dark:text-gray-400">
-              {perfilDescricao} - {pessoa_usuario.login}
+              {perfilDescricao}
+            </span>
+            <span className="block text-sm text-gray-500 dark:text-gray-400">
+              {pessoa_usuario.login}
             </span>
           </div>
 
@@ -196,7 +199,7 @@ export default function UserDropdown() {
               <DropdownItem
                 onItemClick={() => setIsOpen(false)}
                 tag="a"
-                href="/suport"
+                href="/suporte"
                 className="group flex items-center gap-3 text-[var(--cor-texto)] dark:text-[var(--text-tooltip)]"
               >
                 <LifebuoyIcon className="h-5 w-5" aria-hidden="true" />

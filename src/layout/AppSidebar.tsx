@@ -10,8 +10,10 @@ import { useSidebar } from '../context/SidebarContext';
 import {
   ChevronDownIcon,
   FileIcon,
+  Finance,
   PencilIcon,
   Settings,
+  TableIcon,
   UserIcon,
   XmlFolderIcon,
 } from '../icons/index';
@@ -36,12 +38,12 @@ type NavItem = {
 // usando o hook useAuthorizedNavigation quando a integração for restaurada
 const navItems: NavItem[] = [
   {
-    icon: <LifebuoyIcon className="h-5 w-5" />,
+    icon: <TableIcon />,
     name: 'Dashboard',
     path: '/dashboard',
   },
   {
-    icon: <LifebuoyIcon className="h-5 w-5" />,
+    icon: <Finance />,
     name: 'Entradas',
     path: '', // Item pai sem rota direta (funciona apenas como grupo de submenus)
     subItems: [
@@ -55,13 +57,28 @@ const navItems: NavItem[] = [
       },
     ],
   },
+  {
+    icon: <Settings />,
+    name: 'Configurações',
+    path: '',
+    subItems: [
+      {
+        name: 'Usuário',
+        path: '/usuario',
+      },
+      {
+        name: 'Suporte',
+        path: '/suporte',
+      },
+    ],
+  },
 ];
 
 const AppSidebar: React.FC = () => {
   // PRÓXIMAS MELHORIAS: Descomentar para integrações futuras
   // const { modulosPaginas } = useSelector((state: RootState) => state.modulo);
   // const { pessoa_usuario } = useSelector((state: RootState) => state.usuario);
-  
+
   // TODO: Restaurar o hook useAuthorizedNavigation para obter itens dinâmicos baseados em permissões
   // const { authorizedItems } = useAuthorizedNavigation();
   // Se habilitado, substituir 'navItems' por 'authorizedItems' nas renderizações abaixo
@@ -157,7 +174,7 @@ const AppSidebar: React.FC = () => {
     setIsHovered,
     toggleMobileSidebar,
   } = useSidebar();
-  
+
   // Obtém a rota atual do navegador para destacar itens ativos
   const pathname = usePathname();
 
@@ -189,7 +206,7 @@ const AppSidebar: React.FC = () => {
   // Abre automaticamente o submenu quando a rota atual corresponde a um item interno
   useEffect(() => {
     let submenuMatched = false;
-    
+
     navItems.forEach((nav, index) => {
       if (nav.subItems) {
         // Função recursiva para buscar se há algum item ativo nos submenus
@@ -200,14 +217,14 @@ const AppSidebar: React.FC = () => {
             return false;
           });
         };
-        
+
         if (search(nav.subItems)) {
           setOpenSubmenu({ type: 'main', index });
           submenuMatched = true;
         }
       }
     });
-    
+
     if (!submenuMatched) setOpenSubmenu(null);
   }, [pathname, isActive]);
 
@@ -342,12 +359,12 @@ const AppSidebar: React.FC = () => {
           {isExpanded || isHovered || isMobileOpen ? (
             <div className="flex flex-col items-center gap-1">
               <h1 className="ml-2 hidden text-4xl text-[var(--cor-texto)] md:block dark:text-[var(--dark-cor-texto)]">
-                Gerencial
+                Central RTD
               </h1>
             </div>
           ) : (
             <h1 className="ml-2 hidden text-4xl text-[var(--cor-texto)] md:block dark:text-[var(--dark-cor-texto)]">
-              G
+              RTD
             </h1>
           )}
         </Link>
