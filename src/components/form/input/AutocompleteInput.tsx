@@ -140,7 +140,7 @@ const AutocompleteInput: FC<AutocompleteInputProps> = ({
 
       {/* Dropdown de opções */}
       {isOpen && filteredOptions.length > 0 && (
-        <div className="absolute z-50 mt-1 max-h-60 w-full overflow-auto rounded-lg border border-gray-300 bg-white shadow-lg dark:border-gray-700 dark:bg-gray-800">
+        <div className="absolute z-50 mt-1 max-h-60 w-full overflow-auto rounded-lg bg-white shadow-theme-lg dark:bg-gray-800 dark:shadow-theme-xl">
           {filteredOptions.map((option) => (
             <div
               key={option.id}

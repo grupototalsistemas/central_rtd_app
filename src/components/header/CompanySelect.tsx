@@ -65,7 +65,7 @@ const CompanySelect: React.FC<SelectProps> = ({
       {/* Botão principal - agora com estilo consistente com header */}
       <button
         type="button"
-        className={`header-button relative flex h-11 w-full items-center justify-between rounded-lg border border-[var(--cor-borda)] bg-[var(--background)] px-3 text-sm font-medium text-[var(--cor-texto)] shadow-sm transition-all duration-200 hover:bg-[var(--cor-button-hover)] hover:text-[var(--texto-button)] focus:outline-none dark:bg-[var(--dark-background)] dark:text-[var(--dark-cor-texto)] dark:hover:bg-[var(--dark-cor-button-hover)] dark:hover:text-[var(--dark-texto-button)]`}
+        className={`header-button relative flex h-11 w-full items-center justify-between rounded-lg bg-(--background) px-3 text-sm font-medium text-(--cor-texto) shadow-theme-xs transition-all duration-200 hover:bg-(--cor-button-hover) hover:text-(--texto-accento) hover:shadow-theme-sm focus:outline-none dark:bg-(--dark-background) dark:text-(--dark-cor-texto) dark:hover:bg-(--dark-cor-button-hover) dark:hover:text-(--dark-texto-button)`}
         onClick={handleToggle}
       >
         <span className="truncate text-left">
@@ -74,7 +74,7 @@ const CompanySelect: React.FC<SelectProps> = ({
 
         {/* Ícone seta */}
         <svg
-          className={`ml-2 h-4 w-4 flex-shrink-0 transition-transform duration-200 ${
+          className={`ml-2 h-4 w-4 shrink-0 transition-transform duration-200 ${
             isOpen ? 'rotate-180' : ''
           }`}
           fill="none"
@@ -93,15 +93,15 @@ const CompanySelect: React.FC<SelectProps> = ({
       {/* Dropdown */}
       {isOpen && (
         <ul
-          className={`custom-scrollbar absolute z-50 max-h-60 w-full overflow-auto rounded-lg border-[var(--cor-borda)] bg-[var(--cor-card)] dark:bg-[var(--dark-cor-card)] ${openUp ? 'bottom-full mb-1' : 'mt-1'}`}
+          className={`custom-scrollbar absolute z-50 max-h-60 w-full overflow-auto rounded-lg bg-(--cor-card) shadow-theme-lg dark:bg-(--dark-cor-card) dark:shadow-theme-xl ${openUp ? 'bottom-full mb-1' : 'mt-1'}`}
         >
           {options.map((option) => (
             <li
               key={option.value}
               onClick={() => handleSelect(option.value.toString())}
-              className={`cursor-pointer px-3 py-2.5 text-sm font-medium text-[var(--cor-texto)] transition-colors duration-150 hover:bg-[var(--cor-button-hover)] hover:text-[var(--texto-button)] dark:text-[var(--dark-cor-texto)] dark:hover:bg-[var(--dark-cor-button-hover)] dark:hover:text-[var(--dark-texto-button)] ${
+              className={`cursor-pointer px-3 py-2.5 text-sm font-medium text-(--cor-texto) transition-colors duration-150 hover:bg-(--cor-button-hover) hover:text-(--texto-accento) dark:text-(--dark-cor-texto) dark:hover:bg-(--dark-cor-button-hover) dark:hover:text-(--dark-texto-button) ${
                 option.value === selectedValue
-                  ? 'bg-[var(--cor-button-hover)] text-[var(--texto-button)] dark:bg-[var(--dark-cor-button-hover)] dark:text-[var(--dark-texto-button)]'
+                  ? 'bg-(--cor-button-hover) text-(--texto-accento) dark:bg-(--dark-cor-button-hover) dark:text-(--dark-texto-button)'
                   : ''
               }`}
             >

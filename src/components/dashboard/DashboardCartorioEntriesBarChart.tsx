@@ -94,7 +94,7 @@ export default function DashboardCartorioEntriesBarChart({
   };
 
   return (
-    <div className="w-full overflow-x-auto">
+    <div className="flex-1 overflow-x-auto">
       <div className="min-w-170">
         <ReactApexChart options={options} series={series} type="bar" height={340} />
       </div>

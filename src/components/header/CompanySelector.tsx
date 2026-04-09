@@ -52,7 +52,7 @@ const CompanySelector: React.FC = () => {
     if (!empresaUnica) return null;
 
     return (
-      <span className="ml-4 text-sm font-medium text-[var(--cor-texto)] lg:inline-block dark:text-[var(--dark-cor-texto)]">
+      <span className="ml-4 text-sm font-medium text-(--cor-texto) lg:inline-block dark:text-(--dark-cor-texto)">
         {empresaUnica.pessoaJuridica?.nome_fantasia ||
           empresaUnica.pessoaJuridica?.razao_social}
       </span>
@@ -80,7 +80,7 @@ const CompanySelector: React.FC = () => {
       <button
         onClick={() => setIsOpen(!isOpen)}
         disabled={isSwitching}
-        className={`flex items-center gap-2 rounded-lg border border-[var(--cor-borda)] bg-[var(--cor-background-componentes)] px-3 py-2 text-sm font-medium text-[var(--cor-texto)] transition-all duration-200 hover:bg-[var(--cor-button-hover)] hover:text-white dark:border-[var(--dark-cor-borda)] dark:bg-[var(--dark-cor-background-componentes)] dark:text-[var(--dark-cor-texto)] dark:hover:bg-[var(--dark-cor-button-hover)] dark:hover:text-[var(--cor-texto)] ${isSwitching ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'} `}
+        className={`flex items-center gap-2 rounded-lg bg-(--cor-card) px-3 py-2 text-sm font-medium text-(--cor-texto) shadow-theme-xs transition-all duration-200 hover:bg-(--cor-button-hover) hover:text-(--texto-accento) hover:shadow-theme-sm dark:bg-(--dark-cor-card) dark:text-(--dark-cor-texto) dark:hover:bg-(--dark-cor-button-hover) dark:hover:text-(--dark-texto-button) ${isSwitching ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'} `}
         aria-label="Selecionar empresa"
         aria-expanded={isOpen}
         aria-haspopup="listbox"
@@ -94,11 +94,11 @@ const CompanySelector: React.FC = () => {
 
       {isOpen && (
         <div
-          className="absolute top-full left-0 z-50 mt-1 w-auto min-w-[280px] overflow-hidden rounded-lg border border-[var(--cor-borda)] bg-[var(--background)] shadow-lg dark:border-[var(--dark-cor-borda)] dark:bg-[var(--dark-background)]"
+          className="absolute top-full left-0 z-50 mt-1 w-auto min-w-70 overflow-hidden rounded-lg bg-(--background) shadow-theme-lg dark:bg-(--dark-background) dark:shadow-theme-xl"
           role="listbox"
           aria-label="Lista de empresas"
         >
-          <div className="max-h-[300px] overflow-y-auto">
+          <div className="max-h-75 overflow-y-auto">
             {empresas.map((empresa, index) => {
               const isSelected =
                 Number(empresa.id_pessoa_juridica) === selectedCompanyId;
@@ -116,19 +116,19 @@ const CompanySelector: React.FC = () => {
                   disabled={isSwitching || isSelected}
                   className={`flex w-full items-center gap-3 px-4 py-3 text-left transition-colors duration-150 ${
                     isSelected
-                      ? 'bg-[var(--cor-button)] text-white dark:bg-[var(--dark-cor-button)]'
-                      : 'text-[var(--cor-texto)] hover:bg-[var(--cor-background-componentes)] dark:text-[var(--dark-cor-texto)] dark:hover:bg-[var(--dark-cor-background-componentes)]'
+                      ? 'bg-(--cor-button-hover) text-(--texto-accento) dark:bg-(--dark-cor-button-hover) dark:text-(--dark-texto-button)'
+                      : 'text-(--cor-texto) hover:bg-(--cor-card) dark:text-(--dark-cor-texto) dark:hover:bg-(--dark-cor-card)'
                   } ${isSwitching ? 'cursor-not-allowed' : 'cursor-pointer'} `}
                   role="option"
                   aria-selected={isSelected}
                 >
-                  <BuildingOffice2Icon className="h-5 w-5 flex-shrink-0 text-black dark:text-white" />
+                  <BuildingOffice2Icon className="h-5 w-5 shrink-0" />
                   <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-medium text-black dark:text-white">
+                    <p className="truncate text-sm font-medium">
                       {nomeEmpresa}
                     </p>
                     {empresa.juridica_principal === 1 && (
-                      <p className="text-xs text-black opacity-70 dark:text-white">
+                      <p className="text-xs opacity-70">
                         Principal
                       </p>
                     )}
