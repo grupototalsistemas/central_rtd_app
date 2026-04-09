@@ -36,7 +36,7 @@ export default function FilterDropdown() {
       <button
         onClick={toggleDropdown}
         type="button"
-        className="dark:bg-brand-500/[0.12] flex h-11 w-11 items-center justify-center rounded-full border border-gray-200 bg-white text-red-600 hover:bg-gray-100 hover:text-gray-700 dark:border-gray-800 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-white"
+        className="dark:bg-brand-500/12 flex h-11 w-11 items-center justify-center rounded-full bg-white text-(--central-azul) shadow-theme-xs transition-all hover:bg-(--cor-button-hover) hover:text-(--texto-accento) hover:shadow-theme-sm dark:text-(--dark-chrome-text) dark:hover:bg-(--dark-cor-button-hover) dark:hover:text-(--dark-texto-button)"
       >
         <svg
           className="fill-white stroke-current dark:fill-gray-800"
@@ -60,10 +60,10 @@ export default function FilterDropdown() {
       <Dropdown
         isOpen={isOpen}
         onClose={closeDropdown}
-        className="shadow-theme-lg dark:bg-gray-dark absolute right-0 mt-3 w-[90vw] max-w-sm flex-col rounded-2xl border border-gray-200 bg-white p-4 sm:p-5 dark:border-gray-800"
+        className="dark:bg-gray-dark absolute right-0 mt-3 w-[90vw] max-w-sm flex-col rounded-2xl bg-white p-4 shadow-theme-xl sm:p-5 dark:shadow-theme-xl"
       >
         {/* Cabeçalho */}
-        <div className="mb-3 flex items-center justify-between border-b border-gray-100 pb-2 dark:border-gray-700">
+        <div className="mb-3 flex items-center justify-between pb-2">
           <h5 className="text-lg font-semibold text-gray-800 dark:text-gray-200">
             Filtros
           </h5>

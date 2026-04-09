@@ -248,6 +248,8 @@ const AppSidebar: React.FC = () => {
     toggleMobileSidebar();
   };
 
+  const isSidebarExpandedState = isExpanded || isHovered || isMobileOpen;
+
   const renderSubItems = (subItems: NavSubItem[], parentKey = '') => (
     <ul className="ml-4 space-y-1">
       {subItems.map((item) => (
@@ -343,7 +345,7 @@ const AppSidebar: React.FC = () => {
 
   return (
     <aside
-      className={`sidebar fixed top-0 left-0 z-100 flex h-screen flex-col border-r transition-all duration-300 ease-in-out ${isExpanded || isMobileOpen ? 'w-[290px]' : isHovered ? 'w-[290px]' : 'w-[90px]'} ${isMobileOpen ? 'translate-x-0' : '-translate-x-full'} lg:translate-x-0`}
+      className={`sidebar fixed top-0 left-0 z-100 flex h-screen flex-col transition-all duration-300 ease-in-out ${isExpanded || isMobileOpen ? 'w-[290px]' : isHovered ? 'w-[290px]' : 'w-[90px]'} ${isMobileOpen ? 'translate-x-0' : '-translate-x-full'} lg:translate-x-0`}
       onMouseEnter={() => !isExpanded && setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
@@ -355,24 +357,39 @@ const AppSidebar: React.FC = () => {
             : 'justify-between'
         }`}
       >
-        <Link href="/">
-          {isExpanded || isHovered || isMobileOpen ? (
-            <div className="flex flex-col items-center gap-1">
-              <h1 className="ml-2 hidden text-4xl text-[var(--cor-texto)] md:block dark:text-[var(--dark-cor-texto)]">
-                Central RTD
-              </h1>
-            </div>
-          ) : (
-            <h1 className="ml-2 hidden text-4xl text-[var(--cor-texto)] md:block dark:text-[var(--dark-cor-texto)]">
+        <Link href="/" className="block">
+          <h1
+            className={`sidebar-title hidden text-4xl text-(--chrome-text) md:block dark:text-(--dark-chrome-text) ${
+              isSidebarExpandedState ? 'w-[215px]' : 'w-[72px]'
+            }`}
+          >
+            <span
+              aria-hidden={!isSidebarExpandedState}
+              className={`sidebar-title-label ${
+                isSidebarExpandedState
+                  ? 'sidebar-title-label-visible'
+                  : 'sidebar-title-label-hidden'
+              }`}
+            >
+              Central RTD
+            </span>
+            <span
+              aria-hidden={isSidebarExpandedState}
+              className={`sidebar-title-label ${
+                isSidebarExpandedState
+                  ? 'sidebar-title-label-hidden'
+                  : 'sidebar-title-label-visible'
+              }`}
+            >
               RTD
-            </h1>
-          )}
+            </span>
+          </h1>
         </Link>
 
         {/* Botão de fechar - apenas mobile */}
         <button
           onClick={handleCloseSidebar}
-          className="mr-4 flex h-10 w-10 items-center justify-center rounded-md text-[var(--cor-texto)] transition-colors hover:bg-[var(--hover-background)] lg:hidden dark:text-[var(--dark-cor-texto)] dark:hover:bg-[var(--dark-hover-background)]"
+          className="mr-4 flex h-10 w-10 items-center justify-center rounded-md text-(--chrome-text) transition-colors hover:bg-white/15 lg:hidden dark:text-(--dark-chrome-text) dark:hover:bg-white/10"
           aria-label="Fechar menu"
         >
           <XMarkIcon className="h-6 w-6" />
@@ -385,7 +402,7 @@ const AppSidebar: React.FC = () => {
           <div className="flex flex-col gap-4">
             <div>
               <h2
-                className={`mb-4 flex text-xs leading-[20px] text-[var(--cor-texto)] uppercase dark:text-[var(--dark-cor-texto)] ${
+                className={`mb-4 flex text-xs leading-[20px] text-(--chrome-text) uppercase dark:text-(--dark-chrome-text) ${
                   !isExpanded && !isHovered && !isMobileOpen
                     ? 'justify-center'
                     : 'justify-start'

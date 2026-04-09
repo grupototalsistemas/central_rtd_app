@@ -20,10 +20,10 @@ export default function DashboardMetricCard({
   trendLabel,
 }: DashboardMetricCardProps) {
   return (
-    <article className="rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-white/3">
-      <p className="text-sm text-gray-500 dark:text-gray-400">{title}</p>
+    <article className="dashboard-card-surface p-5">
+      <p className="notification-dropdown-muted-text text-sm">{title}</p>
       <div className="mt-2 flex items-center justify-between gap-3">
-        <h3 className="text-2xl font-semibold text-gray-900 dark:text-white">
+        <h3 className="text-2xl font-semibold text-(--cor-texto) dark:text-(--dark-cor-texto)">
           {value}
         </h3>
         {trendLabel ? (
@@ -35,7 +35,7 @@ export default function DashboardMetricCard({
         ) : null}
       </div>
       {helperText ? (
-        <p className="mt-3 text-xs text-gray-500 dark:text-gray-400">{helperText}</p>
+        <p className="notification-dropdown-muted-text mt-3 text-xs">{helperText}</p>
       ) : null}
     </article>
   );

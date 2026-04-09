@@ -16,7 +16,7 @@
     "@fullcalendar/react": "^6.1.15",
     "@fullcalendar/timegrid": "^6.1.15",
     "@heroicons/react": "^2.2.0",
-    "@hookform/resolvers": "^5.2.0",
+    "@hookform/resolvers": "^5.2.2",
     "@react-jvectormap/core": "^1.0.4",
     "@react-jvectormap/world": "^1.1.2",
     "@reduxjs/toolkit": "^2.8.2",
@@ -41,7 +41,7 @@
     "react-dnd-html5-backend": "^16.0.1",
     "react-dom": "19.2.3",
     "react-dropzone": "^14.3.5",
-    "react-hook-form": "^7.61.1",
+    "react-hook-form": "^7.72.1",
     "react-pick-color": "^2.0.0",
     "react-redux": "^9.2.0",
     "react-toastify": "^11.0.5",
@@ -51,7 +51,7 @@
     "swiper": "12.1.2",
     "tailwind-merge": "^2.6.0",
     "web-pki": "^2.16.3",
-    "zod": "^4.0.10"
+    "zod": "^4.3.6"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",

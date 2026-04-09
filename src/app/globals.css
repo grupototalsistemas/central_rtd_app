@@ -137,31 +137,38 @@
 
   --color-theme-purple-500: #7a5af8;
 
-  --background: #f5f5f7;
+  --background: #e8f1fb;
   --foreground: #2c2c34;
   --cor-card: #e6e6e6;
   --cor-edit: #ffffff;
-  --cor-texto: #2c2c34;
-  --cor-button-hover: #b42318;
-  --cor-button-active: #912018;
+  --cor-texto: #1d2939;
+  --cor-button-hover: #f9a526;
+  --cor-button-active: #d68b14;
   --texto-button: #f5f5f7;
-  --titulos: #2c2c34;
-  --tooltip: #2c2c34;
+  --texto-accento: #1d2939;
+  --titulos: #004a96;
+  --tooltip: #004a96;
   --text-tooltip: #f5f5f7;
-  --cor-borda: #2c2c34;
+  --cor-borda: #8ea8c7;
+  --chrome-background: #004a96;
+  --chrome-text: #f5f9ff;
 
-  --dark-background: #171821;
-  --dark-foreground: #21222d;
+  --dark-background: #0f2239;
+  --dark-foreground: #17293F;
+  --dark-dropdown-surface: #142336;
   --dark-cor-card: #21222d;
   --dark-cor-edit: #1d1e26;
-  --dark-cor-texto: #ffffff;
-  --dark-cor-button-hover: #fecdca;
-  --dark-cor-button-active: #fda29b;
+  --dark-cor-texto: #e7eef7;
+  --dark-cor-button-hover: #c9851d;
+  --dark-cor-button-active: #a86f16;
   --dark-texto-button: #0b0b0c;
-  --dark-titulos: #87888c;
-  --dark-tooltip: #87888c;
+  --dark-texto-accento: #f8fafc;
+  --dark-titulos: #9cb9d8;
+  --dark-tooltip: #9cb9d8;
   --dark-text-tooltip: #f5f5f7;
-  --dark-cor-borda: #ffffff;
+  --dark-cor-borda: #4b6484;
+  --dark-chrome-background: #00366f;
+  --dark-chrome-text: #d9e8f8;
 
   --saldo-positivo: #0086c9;
   --receita: #d92d20;
@@ -169,7 +176,7 @@
   --deposito-previo: #344054;
 
   --central-amarelo: #f9a526;
-  --central-hover-amarelo: #c4895a;
+  --central-hover-amarelo: #d68b14;
   --central-azul: #004a96;
 
   --shadow-theme-md:
@@ -185,6 +192,54 @@
   --shadow-theme-xl:
     0px 20px 24px -4px rgba(16, 24, 40, 0.08),
     0px 8px 8px -4px rgba(16, 24, 40, 0.03);
+  --shadow-theme-light-xs:
+    0px 2px 4px -2px rgba(16, 24, 40, 0.18),
+    0px 8px 14px -10px rgba(16, 24, 40, 0.16),
+    0px 1px 0px 0px rgba(255, 255, 255, 0.5);
+  --shadow-theme-light-sm:
+    0px 4px 8px -3px rgba(16, 24, 40, 0.2),
+    0px 12px 20px -12px rgba(16, 24, 40, 0.18),
+    0px 1px 0px 0px rgba(255, 255, 255, 0.56);
+  --shadow-theme-light-md:
+    0px 8px 14px -6px rgba(16, 24, 40, 0.22),
+    0px 18px 28px -14px rgba(16, 24, 40, 0.2),
+    0px 1px 0px 0px rgba(255, 255, 255, 0.62);
+  --shadow-theme-light-lg:
+    0px 12px 20px -8px rgba(16, 24, 40, 0.24),
+    0px 26px 38px -16px rgba(16, 24, 40, 0.22),
+    0px 1px 0px 0px rgba(255, 255, 255, 0.68);
+  --shadow-theme-dark-xs:
+    0px 2px 4px -2px rgba(0, 0, 0, 0.55),
+    0px 8px 14px -10px rgba(0, 0, 0, 0.5),
+    0px 1px 0px 0px rgba(255, 255, 255, 0.06);
+  --shadow-theme-dark-sm:
+    0px 4px 8px -3px rgba(0, 0, 0, 0.6),
+    0px 12px 20px -12px rgba(0, 0, 0, 0.54),
+    0px 1px 0px 0px rgba(255, 255, 255, 0.07);
+  --shadow-theme-dark-md:
+    0px 8px 14px -6px rgba(0, 0, 0, 0.64),
+    0px 18px 28px -14px rgba(0, 0, 0, 0.56),
+    0px 1px 0px 0px rgba(255, 255, 255, 0.08);
+  --shadow-theme-dark-lg:
+    0px 12px 20px -8px rgba(0, 0, 0, 0.68),
+    0px 26px 38px -16px rgba(0, 0, 0, 0.58),
+    0px 1px 0px 0px rgba(255, 255, 255, 0.1);
+  --shadow-input-error:
+    0px 1px 2px 0px rgba(16, 24, 40, 0.05),
+    0px 10px 18px -12px rgba(217, 45, 32, 0.42),
+    0px 4px 12px -10px rgba(217, 45, 32, 0.34);
+  --shadow-input-error-focus:
+    0px 2px 4px 0px rgba(16, 24, 40, 0.08),
+    0px 14px 24px -12px rgba(217, 45, 32, 0.52),
+    0px 6px 14px -10px rgba(217, 45, 32, 0.42);
+  --dark-shadow-input-error:
+    0px 1px 3px 0px rgba(16, 24, 40, 0.35),
+    0px 12px 22px -12px rgba(249, 112, 102, 0.46),
+    0px 5px 14px -10px rgba(249, 112, 102, 0.36);
+  --dark-shadow-input-error-focus:
+    0px 2px 5px 0px rgba(16, 24, 40, 0.45),
+    0px 16px 28px -12px rgba(249, 112, 102, 0.58),
+    0px 7px 16px -10px rgba(249, 112, 102, 0.46);
   --shadow-datepicker: -5px 0 0 #262d3c, 5px 0 0 #262d3c;
   --shadow-focus-ring: 0px 0px 0px 4px rgba(70, 95, 255, 0.12);
   --shadow-slider-navigation:
@@ -226,13 +281,13 @@
     cursor: pointer;
   }
   body {
-    @apply font-outfit relative z-1 bg-gray-50 font-normal;
+    @apply font-outfit relative z-1 bg-(--background) font-normal text-(--cor-texto) dark:bg-(--dark-background) dark:text-(--dark-cor-texto);
   }
 }
 
 /* SIDEBAR  */
 @utility sidebar {
-  @apply border-gray-200 bg-[var(--background)] px-5 text-[var(--cor-texto)] dark:border-gray-800 dark:bg-[var(--dark-background)];
+  @apply bg-(--chrome-background) px-5 text-(--chrome-text) shadow-theme-lg dark:bg-(--dark-chrome-background) dark:text-(--dark-chrome-text) dark:shadow-theme-xl;
 }
 /* MENUS */
 @utility menu-item {
@@ -240,23 +295,23 @@
 }
 
 @utility menu-item-active {
-  @apply bg-[var(--cor-button-hover)] text-[var(--texto-button)] hover:bg-[var(--cor-button-active)] hover:text-[var(--texto-button)] dark:bg-[var(--dark-cor-button-hover)] dark:text-[var(--dark-texto-button)] dark:hover:bg-[var(--dark-cor-button-active)] dark:hover:text-[var(--dark-texto-button)];
+  @apply bg-(--cor-button-hover) text-(--texto-accento) shadow-theme-sm transition-shadow hover:bg-(--cor-button-active) hover:text-(--texto-accento) hover:shadow-theme-md active:shadow-theme-xs dark:bg-(--dark-cor-button-hover) dark:text-(--dark-texto-button) dark:hover:bg-(--dark-cor-button-active) dark:hover:text-(--dark-texto-button);
 }
 
 @utility menu-item-inactive {
-  @apply hover:bg-gray-dark/10 text-[var(--cor-texto)] hover:text-[var(--cor-button-hover)] dark:text-[var(--dark-cor-texto)] dark:hover:bg-white/5 dark:hover:text-[var(--dark-cor-button-hover)];
+  @apply text-(--chrome-text) hover:bg-white/15 hover:text-(--cor-button-hover) dark:text-(--dark-chrome-text) dark:hover:bg-white/10 dark:hover:text-(--dark-cor-button-hover);
 }
 
 @utility menu-item-icon {
-  @apply text-[var(--cor-texto)] dark:text-[var(--dark-cor-texto)];
+  @apply text-(--chrome-text) dark:text-(--dark-chrome-text);
 }
 
 @utility menu-item-icon-active {
-  @apply text-[var(--texto-button)] dark:text-[var(--dark-texto-button)];
+  @apply text-(--texto-accento) dark:text-(--dark-texto-button);
 }
 
 @utility menu-item-icon-inactive {
-  @apply text-[var(--cor-texto)] group-hover:text-[var(--cor-button-hover)] dark:text-[var(--dark-cor-texto)] dark:group-hover:text-[var(--dark-cor-button-hover)];
+  @apply text-(--chrome-text) group-hover:text-(--cor-button-hover) dark:text-(--dark-chrome-text) dark:group-hover:text-(--dark-cor-button-hover);
 }
 
 @utility menu-item-arrow {
@@ -264,11 +319,31 @@
 }
 
 @utility menu-item-arrow-active {
-  @apply rotate-180 text-[var(--cor-texto)] dark:text-[var(--dark-cor-texto)];
+  @apply rotate-180 text-(--chrome-text) dark:text-(--dark-chrome-text);
 }
 
 @utility menu-item-arrow-inactive {
-  @apply text-[var(--cor-texto)] group-hover:text-gray-700 dark:text-[var(--dark-cor-texto)] dark:group-hover:text-gray-300;
+  @apply text-(--chrome-text) group-hover:text-(--cor-button-hover) dark:text-(--dark-chrome-text) dark:group-hover:text-(--dark-cor-button-hover);
+}
+
+@utility menu-item-text {
+  @apply block min-w-0 max-w-full truncate whitespace-nowrap text-ellipsis transition-opacity duration-300 ease-in-out;
+}
+
+@utility sidebar-title {
+  @apply relative ml-2 flex h-12 items-center overflow-hidden whitespace-nowrap transition-[width] duration-300 ease-in-out;
+}
+
+@utility sidebar-title-label {
+  @apply absolute inset-y-0 left-0 flex items-center whitespace-nowrap transition-opacity duration-300 ease-in-out;
+}
+
+@utility sidebar-title-label-visible {
+  @apply opacity-100;
+}
+
+@utility sidebar-title-label-hidden {
+  @apply pointer-events-none opacity-0;
 }
 
 @utility menu-dropdown-item {
@@ -276,59 +351,70 @@
 }
 
 @utility menu-dropdown-item-active {
-  @apply bg-[var(--cor-button-hover)] text-[var(--texto-button)] dark:bg-[var(--dark-cor-button-hover)] dark:text-[var(--dark-texto-button)];
+  @apply bg-(--cor-button-hover) text-(--texto-accento) shadow-theme-xs transition-shadow hover:shadow-theme-sm dark:bg-(--dark-cor-button-hover) dark:text-(--dark-texto-button);
 }
 
 @utility menu-dropdown-item-inactive {
-  @apply hover:bg-gray-dark/10 text-[var(--cor-texto)] hover:text-[var(--cor-button-hover)] dark:text-[var(--dark-cor-texto)] dark:hover:bg-white/5 dark:hover:text-[var(--dark-cor-button-hover)];
+  @apply text-(--chrome-text) hover:bg-white/15 hover:text-(--cor-button-hover) dark:text-(--dark-chrome-text) dark:hover:bg-white/10 dark:hover:text-(--dark-cor-button-hover);
 }
 
 @utility menu-dropdown-badge {
-  @apply block rounded-full px-2.5 py-0.5 text-xs font-medium text-white uppercase dark:text-red-800;
+  @apply block rounded-full px-2.5 py-0.5 text-xs font-medium uppercase;
 }
 
 @utility menu-dropdown-badge-active {
-  @apply dark:bg-brand-50 bg-red-900;
+  @apply bg-(--cor-button-hover) text-(--texto-accento) dark:bg-(--dark-cor-button-hover) dark:text-(--dark-texto-button);
 }
 
 @utility menu-dropdown-badge-inactive {
-  @apply group-hover:bg-brand-100 dark:bg-brand-50 dark:group-hover:bg-brand-500/20 border border-white bg-red-900;
+  @apply bg-(--cor-button-active) text-(--texto-accento) shadow-theme-xs transition-shadow group-hover:bg-(--cor-button-hover) group-hover:shadow-theme-sm dark:bg-(--dark-cor-button-active) dark:text-(--dark-texto-button) dark:group-hover:bg-(--dark-cor-button-hover);
 }
 /* FIM MENUS */
 /* FIM SIDEBAR */
 
 /* HEADER */
 @utility header {
-  @apply border-gray-200 bg-[var(--background)] lg:border-b dark:border-gray-800 dark:bg-[var(--dark-background)];
+  @apply bg-(--chrome-background) text-(--chrome-text) shadow-theme-sm dark:bg-(--dark-chrome-background) dark:text-(--dark-chrome-text) dark:shadow-theme-lg;
+}
+@utility app-header {
+  @apply bg-(--background) text-(--cor-texto) shadow-(--shadow-theme-light-sm) dark:bg-(--dark-background) dark:text-(--dark-cor-texto) dark:shadow-(--shadow-theme-dark-sm);
 }
 @utility header-button {
-  @apply rounded-lg p-2 text-[var(--cor-texto)] transition hover:bg-[var(--cor-button-hover)] hover:text-[var(--texto-button)] dark:text-[var(--dark-cor-texto)] dark:hover:bg-[var(--dark-cor-button-hover)] dark:hover:text-[var(--dark-texto-button)];
+  @apply rounded-lg p-2 text-(--cor-texto) shadow-theme-xs transition-all hover:bg-(--cor-button-hover) hover:text-(--texto-accento) hover:shadow-theme-sm active:shadow-theme-xs dark:text-(--dark-cor-texto) dark:hover:bg-(--dark-cor-button-hover) dark:hover:text-(--dark-texto-button);
 }
 @utility header-button-active {
-  @apply rounded-lg bg-[var(--cor-button-hover)] p-2 text-[var(--texto-button)] dark:bg-[var(--dark-cor-button-hover)] dark:text-[var(--dark-texto-button)];
+  @apply rounded-lg bg-(--cor-button-hover) p-2 text-(--texto-accento) shadow-theme-sm dark:bg-(--dark-cor-button-hover) dark:text-(--dark-texto-button);
 }
 /* FIM HEADER */
 
 /* PAGINA DO MODULO */
 @utility module {
-  @apply bg-[var(--background)] text-[var(--cor-texto)] dark:bg-[var(--dark-background)] dark:text-[var(--dark-cor-texto)];
+  @apply bg-(--background) text-(--cor-texto) dark:bg-(--dark-background) dark:text-(--dark-cor-texto);
 }
 
 @utility module-card {
-  @apply rounded-xl bg-[var(--foreground)] px-8 py-8 shadow-lg dark:bg-[var(--dark-foreground)];
+  @apply rounded-xl bg-(--foreground) px-8 py-8 shadow-theme-lg dark:bg-(--dark-foreground) dark:shadow-theme-xl;
 }
 @utility module-card-title {
-  @apply mb-4 text-2xl font-semibold text-[var(--dark-cor-texto)];
+  @apply mb-4 text-2xl font-semibold text-(--dark-cor-texto);
 }
 @utility module-card-text {
   @apply text-theme-sm;
 }
 
 @utility module-internal-card {
-  @apply rounded-xl bg-[var(--background)] px-4 py-4 shadow-lg dark:bg-[var(--dark-background)];
+  @apply rounded-xl bg-(--background) px-4 py-4 shadow-theme-md dark:bg-(--dark-background) dark:shadow-theme-lg;
 }
 @utility module-internal-card-title {
-  @apply mb-4 text-lg font-semibold text-[var(--cor-texto)] dark:text-[var(--dark-cor-texto)];
+  @apply mb-4 text-lg font-semibold text-(--cor-texto) dark:text-(--dark-cor-texto);
+}
+
+@utility dashboard-card-surface {
+  @apply rounded-2xl border border-transparent bg-(--cor-edit) text-(--cor-texto) shadow-(--shadow-theme-light-sm) transition-shadow hover:shadow-(--shadow-theme-light-md) dark:bg-(--dark-foreground) dark:text-(--dark-cor-texto) dark:shadow-(--shadow-theme-dark-md) dark:hover:shadow-(--shadow-theme-dark-lg);
+}
+
+@utility dashboard-card-soft {
+  @apply rounded-xl border border-transparent bg-(--cor-edit) text-(--cor-texto) shadow-(--shadow-theme-light-xs) transition-all hover:shadow-(--shadow-theme-light-sm) dark:bg-(--dark-foreground) dark:text-(--dark-cor-texto) dark:shadow-(--shadow-theme-dark-sm) dark:hover:shadow-(--shadow-theme-dark-md);
 }
 
 /* FIM PAGINA DO MODULO */
@@ -361,29 +447,50 @@
 }
 
 @utility navigatorButtonActive {
-  @apply dark:bg-brand-500/[0.12] bg-red-200 text-gray-600 dark:text-white;
+  @apply bg-(--cor-button-hover) text-(--texto-accento) shadow-theme-sm dark:bg-(--dark-cor-button-hover) dark:text-(--dark-texto-button);
 }
 
 @utility navigatorButtonInactive {
-  @apply bg-red-800 text-white hover:bg-red-700 hover:text-gray-100 dark:text-gray-300 dark:hover:bg-white/5;
+  @apply bg-(--central-azul) text-(--chrome-text) shadow-theme-xs transition-all hover:bg-(--cor-button-hover) hover:text-(--texto-accento) hover:shadow-theme-sm active:shadow-theme-xs dark:bg-(--dark-chrome-background) dark:text-(--dark-chrome-text) dark:hover:bg-(--dark-cor-button-hover) dark:hover:text-(--dark-texto-button);
 }
 /* FIM PAGE NAVIGATOR */
 
 /* Dropdown */
 @utility filter-dropdown {
-  @apply rounded-2xl bg-[var(--foreground)] p-3 dark:bg-[var(--foreground)];
+  @apply rounded-2xl bg-(--foreground) p-3 shadow-theme-lg dark:bg-(--foreground) dark:shadow-theme-xl;
 }
 @utility filter-dropdown-text {
-  @apply text-theme-sm text-[var(--texto-button)];
+  @apply text-theme-sm text-(--texto-button);
 }
 @utility filter-dropdown-button {
-  @apply text-theme-sm rounded-lg px-3 py-2 font-medium text-[var(--texto-button)] hover:bg-white/5;
+  @apply text-theme-sm rounded-lg px-3 py-2 font-medium text-(--texto-button) hover:bg-white/5;
 }
 @utility notification-card {
-  @apply text-theme-sm rounded-lg bg-[var(--background)] px-3 py-2 font-medium text-[var(--texto-button)] hover:bg-white/20;
+  @apply text-theme-sm rounded-lg bg-(--cor-card) px-3 py-2 font-medium text-(--cor-texto) shadow-theme-xs transition-all hover:bg-(--cor-button-hover) hover:text-(--texto-accento) hover:shadow-theme-sm dark:bg-(--dark-cor-card) dark:text-(--dark-cor-texto) dark:hover:bg-(--dark-cor-button-hover) dark:hover:text-(--dark-texto-button);
 }
 @utility notification-card-text {
-  @apply text-theme-sm text-[var(--texto-button)];
+  @apply text-theme-sm text-(--cor-texto) dark:text-(--dark-cor-texto);
+}
+@utility notification-dropdown {
+  @apply dashboard-card-surface shadow-(--shadow-theme-light-xs) hover:shadow-(--shadow-theme-light-sm) dark:bg-(--dark-dropdown-surface) dark:shadow-(--shadow-theme-dark-sm) dark:hover:shadow-(--shadow-theme-dark-md);
+}
+@utility notification-dropdown-muted-text {
+  @apply text-(--cor-texto) opacity-70 dark:text-(--dark-cor-texto) dark:opacity-75;
+}
+@utility notification-dropdown-icon-button {
+  @apply rounded-lg p-2 text-(--cor-texto) transition-colors hover:bg-(--cor-button-hover) hover:text-(--texto-accento) dark:text-(--dark-cor-texto) dark:hover:bg-(--dark-cor-button-hover) dark:hover:text-(--dark-texto-button);
+}
+@utility notification-dropdown-footer-button {
+  @apply rounded-lg border border-(--cor-borda) bg-(--cor-edit) text-(--cor-texto) shadow-theme-xs transition-all hover:bg-(--cor-button-hover) hover:text-(--texto-accento) hover:shadow-theme-sm dark:border-(--dark-cor-borda) dark:bg-(--dark-cor-edit) dark:text-(--dark-cor-texto) dark:hover:bg-(--dark-cor-button-hover) dark:hover:text-(--dark-texto-button);
+}
+@utility notification-item {
+  @apply flex gap-3 rounded-lg px-4.5 py-3 transition-all duration-200 hover:shadow-md;
+}
+@utility notification-item-unread {
+  @apply border-l-4 border-(--central-azul) bg-(--background) dark:border-(--dark-titulos) dark:bg-(--dark-foreground);
+}
+@utility notification-item-read {
+  @apply bg-(--cor-edit) opacity-75 hover:opacity-100 dark:bg-(--dark-foreground);
 }
 
 .dark .custom-scrollbar::-webkit-scrollbar-thumb {

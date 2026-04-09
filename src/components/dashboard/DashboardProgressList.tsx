@@ -16,15 +16,15 @@ export default function DashboardProgressList({
       {items.map((item) => (
         <div
           key={`${item.title}-${item.subtitle}`}
-          className="flex items-center justify-between rounded-xl border border-gray-200 px-4 py-3 dark:border-gray-800"
+          className="dashboard-card-soft flex items-center justify-between px-4 py-3"
         >
           <div>
-            <p className="text-sm font-medium text-gray-900 dark:text-white/90">
+            <p className="text-sm font-medium text-(--cor-texto) dark:text-(--dark-cor-texto)">
               {item.title}
             </p>
-            <p className="text-xs text-gray-500 dark:text-gray-400">{item.subtitle}</p>
+            <p className="notification-dropdown-muted-text text-xs">{item.subtitle}</p>
           </div>
-          <span className="text-sm font-semibold text-gray-700 dark:text-gray-200">
+          <span className="text-sm font-semibold text-(--cor-texto) dark:text-(--dark-cor-texto)">
             {item.value}
           </span>
         </div>

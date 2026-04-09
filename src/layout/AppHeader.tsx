@@ -42,11 +42,11 @@ const AppHeader: React.FC = React.memo(() => {
   }, []);
 
   return (
-    <header className="sticky top-0 z-50 flex w-full bg-[var(--background)] dark:bg-[var(--dark-background)]">
+    <header className="app-header sticky top-0 z-50 flex w-full">
       <div className="flex grow flex-col items-center justify-between lg:flex-row lg:px-6">
         <div className="flex w-full items-center justify-between gap-2 px-3 py-3 sm:gap-4 lg:justify-normal lg:px-0 lg:py-4">
           <button
-            className="header-button z-50 flex h-10 w-10 items-center justify-center text-[var(--cor-texto)] hover:text-[var(--dark-cor-texto)] lg:h-11 lg:w-11 dark:text-[var(--dark-cor-texto)] dark:hover:text-[var(--cor-texto)]"
+            className="header-button z-50 flex h-10 w-10 items-center justify-center lg:h-11 lg:w-11"
             onClick={handleToggle}
             aria-label="Toggle Sidebar"
           >
@@ -62,13 +62,13 @@ const AppHeader: React.FC = React.memo(() => {
               onClick={toggleApplicationMenu}
               aria-label="Toggle Application Menu"
             >
-              <HorizontaLDots className="h-6 w-6 text-[var(--cor-texto)] dark:text-[var(--dark-cor-texto)]" />
+              <HorizontaLDots className="h-6 w-6" />
             </button>
           </div>
         </div>
 
         <div
-          className={`shadow-theme-md flex w-full items-center justify-between gap-4 px-5 py-4 transition-all duration-300 ease-in-out md:w-1/3 lg:px-0 lg:shadow-none ${
+          className={`shadow-(--shadow-theme-light-md) dark:shadow-(--shadow-theme-dark-md) flex w-full items-center justify-between gap-4 px-5 py-4 transition-all duration-300 ease-in-out md:w-1/3 lg:px-0 lg:shadow-none lg:dark:shadow-none ${
             isApplicationMenuOpen ? 'block max-h-96 opacity-100' : 'hidden'
           } md:flex md:max-h-full md:py-4 md:opacity-100`}
         >

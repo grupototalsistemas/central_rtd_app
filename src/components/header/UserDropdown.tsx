@@ -141,7 +141,7 @@ export default function UserDropdown() {
         aria-expanded={isOpen}
         className="flex items-center gap-2 rounded-full transition-colors hover:opacity-80 focus:outline-none"
       >
-        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[var(--cor-button-hover)] text-lg font-medium text-[var(--texto-button)] dark:bg-[var(--dark-cor-button-hover)] dark:text-[var(--dark-texto-button)]">
+        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-(--cor-button-hover) text-lg font-medium text-(--texto-accento) dark:bg-(--dark-cor-button-hover) dark:text-(--dark-texto-button)">
           {usuario && usuario.length > 0
             ? usuario.charAt(0).toUpperCase()
             : funcionario && funcionario.length > 0
@@ -149,7 +149,7 @@ export default function UserDropdown() {
               : 'U'}
         </div>
         <ChevronDownIcon
-          className={`h-5 w-5 text-[var(--cor-texto)] transition-transform duration-200 dark:text-[var(--dark-cor-texto)] ${isOpen ? 'rotate-180' : ''}`}
+          className={`h-5 w-5 text-(--cor-texto) transition-transform duration-200 dark:text-(--dark-cor-texto) ${isOpen ? 'rotate-180' : ''}`}
           aria-hidden="true"
         />
       </button>
@@ -158,27 +158,27 @@ export default function UserDropdown() {
         <Dropdown
           isOpen={isOpen}
           onClose={() => setIsOpen(false)}
-          className="filter-dropdown shadow-theme-lg absolute right-0 z-[9999] mt-[17px] flex w-[260px] flex-col rounded-xl bg-[var(--cor-card)] transition-all dark:bg-[var(--dark-cor-card)]"
+          className="notification-dropdown absolute right-0 z-9999 mt-4.25 flex w-65 flex-col rounded-xl transition-all"
         >
-          <div className="border-b border-gray-200 px-4 py-3 dark:border-gray-700">
-            <span className="block font-medium text-[var(--cor-texto)] dark:text-[var(--dark-cor-texto)]">
+          <div className="px-4 py-3">
+            <span className="block font-medium text-(--cor-texto) dark:text-(--dark-cor-texto)">
               {funcionario || 'Funcionário'}
             </span>
-            <span className="block text-sm text-gray-500 dark:text-gray-400">
+            <span className="notification-dropdown-muted-text block text-sm">
               {perfilDescricao}
             </span>
-            <span className="block text-sm text-gray-500 dark:text-gray-400">
+            <span className="notification-dropdown-muted-text block text-sm">
               {pessoa_usuario.login}
             </span>
           </div>
 
-          <ul className="mb-2 flex flex-col gap-1 border-b border-gray-200 pt-4 pb-3 dark:border-gray-700">
+          <ul className="mb-2 flex flex-col gap-1 pt-4 pb-3">
             <li>
               <DropdownItem
                 onItemClick={() => setIsOpen(false)}
                 tag="a"
                 href={`/usuario`}
-                className="group flex items-center gap-3 text-[var(--cor-texto)] dark:text-[var(--dark-cor-texto)]"
+                className="group flex items-center gap-3 text-(--cor-texto) dark:text-(--dark-cor-texto)"
               >
                 <UserCircleIcon className="h-5 w-5" aria-hidden="true" />
                 Editar Usuario
@@ -189,7 +189,7 @@ export default function UserDropdown() {
                 onItemClick={() => setIsOpen(false)}
                 tag="a"
                 href="/config"
-                className="group flex items-center gap-3 text-[var(--cor-texto)] dark:text-[var(--dark-cor-texto)]"
+                className="group flex items-center gap-3 text-(--cor-texto) dark:text-(--dark-cor-texto)"
               >
                 <Cog6ToothIcon className="h-5 w-5" aria-hidden="true" />
                 Configurações Gerais
@@ -200,7 +200,7 @@ export default function UserDropdown() {
                 onItemClick={() => setIsOpen(false)}
                 tag="a"
                 href="/suporte"
-                className="group flex items-center gap-3 text-[var(--cor-texto)] dark:text-[var(--text-tooltip)]"
+                className="group flex items-center gap-3 text-(--cor-texto) dark:text-(--dark-cor-texto)"
               >
                 <LifebuoyIcon className="h-5 w-5" aria-hidden="true" />
                 Suporte

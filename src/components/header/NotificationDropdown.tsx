@@ -82,9 +82,9 @@ export default function NotificationDropdown() {
         title={`${unreadCount} notificações não lidas`}
       >
         {unreadCount > 0 && (
-          <span className="absolute -top-1 -right-1 z-10 flex h-5 w-5 items-center justify-center rounded-full bg-orange-400 text-xs font-bold text-white">
+          <span className="absolute -top-1 -right-1 z-10 flex h-5 w-5 items-center justify-center rounded-full bg-(--cor-button-hover) text-xs font-bold text-(--texto-accento) dark:bg-(--dark-cor-button-hover) dark:text-(--dark-texto-button)">
             {unreadCount > 9 ? '9+' : unreadCount}
-            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-orange-400 opacity-75"></span>
+            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-(--cor-button-hover) opacity-75 dark:bg-(--dark-cor-button-hover)"></span>
           </span>
         )}
         {/* {!isConnected && (
@@ -111,15 +111,15 @@ export default function NotificationDropdown() {
       <Dropdown
         isOpen={isOpen}
         onClose={closeDropdown}
-        className="shadow-theme-lg filter-dropdown absolute -right-[240px] mt-[17px] flex h-[480px] w-[350px] flex-col rounded-2xl p-3 sm:w-[361px] lg:right-0"
+        className="notification-dropdown absolute -right-[240px] mt-[17px] flex h-[480px] w-[350px] flex-col p-3 sm:w-[361px] lg:right-0"
       >
-        <div className="mb-3 flex items-center justify-between border-b border-gray-100 pb-3">
+        <div className="mb-3 flex items-center justify-between pb-3">
           <div className="flex items-center gap-2">
-            <h5 className="filter-dropdown-text text-lg font-semibold">
+            <h5 className="text-lg font-semibold text-(--cor-texto) dark:text-(--dark-cor-texto)">
               Notificações
             </h5>
             {unreadCount > 0 && (
-              <span className="rounded-full bg-orange-400 px-2 py-0.5 text-xs font-bold text-white">
+              <span className="rounded-full bg-(--cor-button-hover) px-2 py-0.5 text-xs font-bold text-(--texto-accento) dark:bg-(--dark-cor-button-hover) dark:text-(--dark-texto-button)">
                 {unreadCount}
               </span>
             )}
@@ -128,7 +128,7 @@ export default function NotificationDropdown() {
             {notifications.length > 0 && (
               <button
                 onClick={handleMarkAllAsRead}
-                className="text-xs text-blue-500 hover:text-blue-700"
+                className="notification-dropdown-muted-text text-xs transition-colors hover:text-(--cor-button-hover) dark:hover:text-(--dark-cor-button-hover)"
                 title="Marcar todas como lidas"
               >
                 Marcar todas
@@ -136,7 +136,7 @@ export default function NotificationDropdown() {
             )}
             <button
               onClick={toggleDropdown}
-              className="dropdown-toggle filter-dropdown-button transition"
+              className="dropdown-toggle notification-dropdown-icon-button transition"
             >
               <svg
                 className="fill-current"
@@ -161,17 +161,17 @@ export default function NotificationDropdown() {
               <li key={notification.id}>
                 <DropdownItem
                   onItemClick={() => handleNotificationClick(notification.id)}
-                  className={`notification-card flex gap-3 rounded-lg p-3 px-4.5 py-3 transition-all duration-200 hover:shadow-md ${
+                  className={`notification-item ${
                     !notification.read
-                      ? 'border-l-4 border-blue-500 bg-blue-50 dark:bg-blue-900/20'
-                      : 'bg-gray-50/50 opacity-70 hover:opacity-100 dark:bg-gray-800/30'
+                      ? 'notification-item-unread'
+                      : 'notification-item-read'
                   }`}
                 >
                   <span
                     className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-xl transition-colors ${
                       !notification.read
-                        ? 'bg-blue-100 dark:bg-blue-900/50'
-                        : 'bg-gray-100 dark:bg-gray-700/50'
+                        ? 'bg-(--cor-edit) text-(--titulos) dark:bg-(--dark-background) dark:text-(--dark-titulos)'
+                        : 'bg-(--cor-card) text-(--cor-texto) dark:bg-(--dark-background) dark:text-(--dark-cor-texto)'
                     }`}
                   >
                     {getNotificationIcon(notification.type)}
@@ -179,37 +179,31 @@ export default function NotificationDropdown() {
 
                   <span className="block flex-1">
                     <span className="text-theme-sm mb-1.5 flex items-start justify-between gap-2">
-                      <span
-                        className={`font-medium transition-colors ${
-                          !notification.read
-                            ? 'text-gray-900 dark:text-gray-100'
-                            : 'text-gray-700 dark:text-gray-300'
-                        }`}
-                      >
+                      <span className="font-medium text-(--cor-texto) transition-colors dark:text-(--dark-cor-texto)">
                         {notification.title}
                       </span>
                       {!notification.read && (
-                        <span className="h-2 w-2 shrink-0 animate-pulse rounded-full bg-blue-500"></span>
+                        <span className="h-2 w-2 shrink-0 animate-pulse rounded-full bg-(--titulos) dark:bg-(--dark-titulos)"></span>
                       )}
                     </span>
 
                     <p
                       className={`text-theme-xs mb-2 transition-colors ${
                         !notification.read
-                          ? 'text-gray-700 dark:text-gray-300'
-                          : 'text-gray-600 dark:text-gray-400'
+                          ? 'text-(--cor-texto) dark:text-(--dark-cor-texto)'
+                          : 'notification-dropdown-muted-text'
                       }`}
                     >
                       {notification.message}
                     </p>
 
-                    <span className="text-theme-xs flex items-center gap-2 text-gray-500 dark:text-gray-500">
+                    <span className="notification-dropdown-muted-text text-theme-xs flex items-center gap-2">
                       {notification.logData.endpoint_name && (
                         <>
                           <span className="font-medium">
                             {notification.logData.endpoint_name}
                           </span>
-                          <span className="h-1 w-1 rounded-full bg-gray-400"></span>
+                          <span className="h-1 w-1 rounded-full bg-(--cor-borda) dark:bg-(--dark-cor-borda)"></span>
                         </>
                       )}
                       <span>{formatTimestamp(notification.timestamp)}</span>
@@ -219,9 +213,9 @@ export default function NotificationDropdown() {
               </li>
             ))
           ) : (
-            <li className="flex flex-col items-center justify-center py-8 text-center text-gray-500 dark:text-gray-400">
+            <li className="notification-dropdown-muted-text flex flex-col items-center justify-center py-8 text-center">
               <svg
-                className="mb-2 h-12 w-12 text-gray-300 dark:text-gray-600"
+                className="mb-2 h-12 w-12 text-(--cor-borda) dark:text-(--dark-cor-borda)"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -243,7 +237,7 @@ export default function NotificationDropdown() {
               closeDropdown();
               router.push('/notificacoes');
             }}
-            className="filter-dropdown-button mt-3 w-full rounded-lg border border-gray-200 bg-white px-4 py-2.5 text-center text-sm font-medium transition-all hover:bg-gray-50 hover:shadow-md dark:border-gray-700 dark:bg-gray-800 dark:hover:bg-gray-700"
+            className="notification-dropdown-footer-button mt-3 w-full px-4 py-2.5 text-center text-sm font-medium"
           >
             Visualizar todas as notificações
           </button>
