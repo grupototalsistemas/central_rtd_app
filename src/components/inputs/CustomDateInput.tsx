@@ -6,10 +6,12 @@ import { cn } from '@/utils/cn';
 import { format, isValid, parse } from 'date-fns';
 import flatpickr from 'flatpickr';
 import 'flatpickr/dist/flatpickr.css';
+import { Portuguese } from 'flatpickr/dist/l10n/pt.js';
 import * as React from 'react';
 import type { FieldError } from 'react-hook-form';
 
 type InputError = boolean | string | FieldError | null | undefined;
+type DatepickerLocale = flatpickr.Options.LocaleKey | Partial<flatpickr.CustomLocale>;
 
 type DateValueChangeHandler = (value: string, date: Date | null) => void;
 
@@ -35,6 +37,7 @@ export interface CustomDateInputProps
 	displayFormat?: string;
 	acceptedInputFormats?: readonly string[];
 	outputFormat?: string;
+	locale?: DatepickerLocale;
 	showDatepicker?: boolean;
 	showCalendarButton?: boolean;
 	openDatepickerOnFocus?: boolean;
@@ -163,6 +166,7 @@ const CustomDateInput = React.forwardRef<HTMLInputElement, CustomDateInputProps>
 			displayFormat = 'dd/MM/yyyy',
 			acceptedInputFormats = ['dd/MM/yyyy'],
 			outputFormat,
+			locale = Portuguese,
 			showDatepicker = true,
 			showCalendarButton = true,
 			openDatepickerOnFocus = true,
@@ -387,6 +391,7 @@ const CustomDateInput = React.forwardRef<HTMLInputElement, CustomDateInputProps>
 				allowInput: true,
 				appendTo: document.body,
 				clickOpens: openDatepickerOnFocus,
+				locale,
 				monthSelectorType: 'static',
 				position: (_instance, _customElement) => {
 					positionPicker(_instance);
@@ -412,6 +417,7 @@ const CustomDateInput = React.forwardRef<HTMLInputElement, CustomDateInputProps>
 			disabled,
 			displayFormat,
 			handlePickerChange,
+			locale,
 			openDatepickerOnFocus,
 			positionPicker,
 			readOnly,
