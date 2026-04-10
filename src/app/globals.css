@@ -139,7 +139,7 @@
 
   --background: #e8f1fb;
   --foreground: #2c2c34;
-  --cor-card: #e6e6e6;
+  --cor-card: #fcfcfc;
   --cor-edit: #ffffff;
   --cor-texto: #1d2939;
   --cor-button-hover: #f9a526;
@@ -410,11 +410,11 @@
 }
 
 @utility dashboard-card-surface {
-  @apply rounded-2xl border border-transparent bg-(--cor-edit) text-(--cor-texto) shadow-(--shadow-theme-light-sm) transition-shadow hover:shadow-(--shadow-theme-light-md) dark:bg-(--dark-foreground) dark:text-(--dark-cor-texto) dark:shadow-(--shadow-theme-dark-md) dark:hover:shadow-(--shadow-theme-dark-lg);
+  @apply rounded-2xl border border-transparent bg-(--cor-card) text-(--cor-texto) shadow-(--shadow-theme-light-sm) transition-shadow hover:shadow-(--shadow-theme-light-md) dark:bg-(--dark-foreground) dark:text-(--dark-cor-texto) dark:shadow-(--shadow-theme-dark-md) dark:hover:shadow-(--shadow-theme-dark-lg);
 }
 
 @utility dashboard-card-soft {
-  @apply rounded-xl border border-transparent bg-(--cor-edit) text-(--cor-texto) shadow-(--shadow-theme-light-xs) transition-all hover:shadow-(--shadow-theme-light-sm) dark:bg-(--dark-foreground) dark:text-(--dark-cor-texto) dark:shadow-(--shadow-theme-dark-sm) dark:hover:shadow-(--shadow-theme-dark-md);
+  @apply rounded-xl border border-transparent bg-(--cor-card) text-(--cor-texto) shadow-(--shadow-theme-light-xs) transition-all hover:shadow-(--shadow-theme-light-sm) dark:bg-(--dark-foreground) dark:text-(--dark-cor-texto) dark:shadow-(--shadow-theme-dark-sm) dark:hover:shadow-(--shadow-theme-dark-md);
 }
 
 /* FIM PAGINA DO MODULO */
@@ -490,7 +490,7 @@
   @apply border-l-4 border-(--central-azul) bg-(--background) dark:border-(--dark-titulos) dark:bg-(--dark-foreground);
 }
 @utility notification-item-read {
-  @apply bg-(--cor-edit) opacity-75 hover:opacity-100 dark:bg-(--dark-foreground);
+  @apply bg-(--cor-card) opacity-75 hover:opacity-100 dark:bg-(--dark-foreground);
 }
 
 .dark .custom-scrollbar::-webkit-scrollbar-thumb {

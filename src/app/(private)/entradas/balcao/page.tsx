@@ -8,6 +8,8 @@ import Button from '@/components/ui/button/Button';
 import { formatCpfCnpj, validarCpfCnpj } from '@/utils/formatCpfCnpj';
 import { Controller, SubmitHandler, useForm } from 'react-hook-form';
 import { z } from 'zod';
+import CustomTextbox from '@/components/inputs/CustomTextbox';
+import CustomSelect from '@/components/inputs/CustomSelect';
 
 const onlyDigits = (value: string): string => value.replace(/\D/g, '');
 
@@ -56,6 +58,15 @@ const formatPhoneWithDdd = (value: string): string => {
   return `(${digits.slice(0, 2)}) ${digits.slice(2, 7)}-${digits.slice(7)}`;
 };
 
+const formatHourWithColon = (value: string): string => {
+  const digits = value.replace(/\D/g, '').slice(0, 4);
+
+  if (digits.length === 0) return '';
+  if (digits.length <= 2) return digits;
+
+  return `${digits.slice(0, 2)}:${digits.slice(2, 4)}`;
+};
+
 const balcaoFormSchema = z.object({
   documento: z
     .string()
@@ -91,6 +102,17 @@ const balcaoFormSchema = z.object({
       if (!value) return true; // Permite campo vazio
       return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
     }, 'Email inválido.'),
+  observacao: z
+    .string()
+    .max(200, 'Observação deve ter no máximo 200 caracteres.')
+    .transform((value) => value.trim()),
+  horarioUrgencia: z
+    .string()
+    .trim()
+    .refine(
+      (value) => value === '' || /^([01]\d|2[0-3]):([0-5]\d)$/.test(value),
+      'Horário de urgência deve estar no formato HH:mm.'
+    ),
 });
 
 type FormValues = z.infer<typeof balcaoFormSchema>;
@@ -109,6 +131,8 @@ export default function BalcaoPage() {
       contato: '',
       nome: '',
       email: '',
+      observacao: '',
+      horarioUrgencia: '',
     },
     // Primeira validação ao tocar/sair do campo e, depois disso, revalida em cada mudança.
     mode: 'onTouched',
@@ -122,7 +146,6 @@ export default function BalcaoPage() {
 
   const documentoDigitsLength = watch('documento').length;
   const contatoDigitsLength = watch('contato').length;
-
   return (
     <PageTitle title="Balcão" description="Gerencie lançamentos de balcão">
       {/* Formulário de apresentantes */}
@@ -136,6 +159,7 @@ export default function BalcaoPage() {
           title="Apresentante"
           description="Insira informações do apresentante."
           columns={1}
+          collapsible={true}
         >
           {/*
             Controller é necessário aqui porque estes campos são controlados:
@@ -143,7 +167,7 @@ export default function BalcaoPage() {
             - o estado do formulário guarda valores normalizados (ex.: só dígitos).
             Com register simples, ficaria mais difícil sincronizar exibição e valor persistido.
           */}
-          <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+          <div className="grid grid-cols-1 gap-4 lg:grid-cols-2 xl:grid-cols-3">
             {/* Documento */}
             <Controller
               name="documento"
@@ -252,20 +276,122 @@ export default function BalcaoPage() {
                 />
               )}
             />
+
+            {/* Horario de Urgencia */}
+            <Controller
+              name="horarioUrgencia"
+              control={control}
+              render={({ field }) => (
+                <CustomInput
+                  label="Horário de Urgência"
+                  placeholder="HH:mm"
+                  autoComplete="off"
+                  spellCheck={false}
+                  inputMode="numeric"
+                  maxLength={5}
+                  error={errors.horarioUrgencia}
+                  name={field.name}
+                  value={formatHourWithColon(field.value)}
+                  onBlur={() => {
+                    field.onChange(formatHourWithColon(field.value));
+                    field.onBlur();
+                  }}
+                  onChange={(event: React.ChangeEvent<HTMLInputElement>) => {
+                    field.onChange(formatHourWithColon(event.target.value));
+                  }}
+                  ref={field.ref}
+                  className="max-w-50"
+                />
+              )}
+            />
           </div>
 
-          <div className="flex hidden justify-end">
+          {/* Observações */}
+          <Controller
+            name="observacao"
+            control={control}
+            render={({ field }) => (
+              <CustomTextbox
+                label="Observações"
+                placeholder="Digite as observações sobre o apresentante"
+                resize="vertical"
+                autoComplete="off"
+                spellCheck={true}
+                maxLength={200}
+                error={errors.observacao}
+                name={field.name}
+                value={field.value}
+                onBlur={field.onBlur}
+                onChange={(event: React.ChangeEvent<HTMLTextAreaElement>) => {
+                  field.onChange(formatHourWithColon(event.target.value));
+                }}
+                ref={field.ref}
+              />
+            )}
+          />
+
+          <div className="flex justify-end">
             <Button
               type="submit"
               size="sm"
               loading={isSubmitting}
               className="bg-(--central-azul) text-(--texto-button) hover:opacity-90"
+              onClick={() => console.log('Valores do formulario: ', watch())}
             >
               Salvar
             </Button>
           </div>
         </CardContainer>
 
+        {/* Não sei o nome ainda */}
+        <CardContainer columns={1}>
+          <div className="grid grid-cols-1 gap-4 lg:grid-cols-2 xl:grid-cols-3">
+            {/* Naturezas */}
+            <CustomSelect
+              label="Naturezas"
+              options={[
+                { value: 'Registro', label: 'REGISTRO' },
+                { value: 'Notificação', label: 'NOTIFICACAO' },
+                { value: 'DUT', label: 'DUT' },
+                { value: 'Certidão', label: 'CERTIDAO' },
+                { value: 'Averbação', label: 'AVERBACAO' },
+                { value: 'Matrícula', label: 'MATRICULA' },
+              ]}
+              placeholder="Selecione uma opção"
+            />
+
+            {/* Tipo de entradas */}
+            <CustomSelect
+              label="Tipo de entradas"
+              options={[
+                { value: 'opcao1', label: 'Opção 1' },
+                { value: 'opcao2', label: 'Opção 2' },
+                { value: 'opcao3', label: 'Opção 3' },
+              ]}
+              placeholder="Selecione uma opção"
+            />
+
+            {/* Tipos de cobrança */}
+            <CustomSelect
+              label="Tipo de cobrança"
+              options={[
+                { value: 'opcao1', label: 'Opção 1' },
+                { value: 'opcao2', label: 'Opção 2' },
+                { value: 'opcao3', label: 'Opção 3' },
+              ]}
+              placeholder="Selecione uma opção"
+            />
+          </div>
+        </CardContainer>
+
+        {/* Informação do Ato */}
+        <CardContainer
+          title="Informação do Ato"
+          description="Insira informações sobre o ato"
+          collapsible={true}
+        >
+          oi
+        </CardContainer>
       </form>
     </PageTitle>
   );
