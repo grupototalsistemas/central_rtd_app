@@ -10,6 +10,8 @@ import { Controller, SubmitHandler, useForm } from 'react-hook-form';
 import { z } from 'zod';
 import CustomTextbox from '@/components/inputs/CustomTextbox';
 import CustomSelect from '@/components/inputs/CustomSelect';
+import CustomDateInput from '@/components/inputs/CustomDateInput';
+import CustomSearch from '@/components/inputs/CustomSearch';
 
 const onlyDigits = (value: string): string => value.replace(/\D/g, '');
 
@@ -329,18 +331,6 @@ export default function BalcaoPage() {
               />
             )}
           />
-
-          <div className="flex justify-end">
-            <Button
-              type="submit"
-              size="sm"
-              loading={isSubmitting}
-              className="bg-(--central-azul) text-(--texto-button) hover:opacity-90"
-              onClick={() => console.log('Valores do formulario: ', watch())}
-            >
-              Salvar
-            </Button>
-          </div>
         </CardContainer>
 
         {/* Não sei o nome ainda */}
@@ -389,9 +379,53 @@ export default function BalcaoPage() {
           title="Informação do Ato"
           description="Insira informações sobre o ato"
           collapsible={true}
+          columns={1}
         >
-          oi
+          <div className="grid grid-cols-1 gap-4 lg:grid-cols-2 xl:grid-cols-3">
+            {/* Valor */}
+            <CustomInput
+              label="Valor"
+              placeholder="Digite o valor do ato"
+              autoComplete="off"
+              type="number"
+            />
+
+            {/* Protocolo */}
+            <CustomInput
+              label="Protocolo"
+              placeholder="Digite o protocolo"
+              autoComplete="off"
+              type="number"
+            />
+
+            {/* Data da entrada */}
+            <CustomDateInput label="Data da Entrada" placeholder="DD/MM/AAAA" />
+          </div>
+
+          <CustomSelect
+            label="Descrição"
+            searchable
+            options={[
+              { value: '6000', label: 'Descrição 1' },
+              { value: '6001', label: 'Descrição 2' },
+              { value: '6002', label: 'Descrição 3' },
+            ]}
+            placeholder="Selecione uma opção"
+          />
         </CardContainer>
+
+        {/* Botão de salvar */}
+        <div className="flex hidden justify-end">
+          <Button
+            type="submit"
+            size="sm"
+            loading={isSubmitting}
+            className="bg-(--central-azul) text-(--texto-button) hover:opacity-90"
+            onClick={() => console.log('Valores do formulario: ', watch())}
+          >
+            Salvar
+          </Button>
+        </div>
       </form>
     </PageTitle>
   );

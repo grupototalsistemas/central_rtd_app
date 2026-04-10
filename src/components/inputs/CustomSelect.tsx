@@ -2,9 +2,17 @@ import Label from '@/components/form/Label';
 import { cn } from '@/utils/cn';
 import * as React from 'react';
 import type { FieldError } from 'react-hook-form';
+import { createPortal } from 'react-dom';
 
 type SelectError = boolean | string | FieldError | null | undefined;
 type SelectValue = string | number;
+
+interface DropdownPosition {
+	left: number;
+	top: number;
+	width: number;
+	maxListHeight: number;
+}
 
 export interface CustomSelectOption {
 	value: SelectValue;
@@ -36,14 +44,15 @@ export interface CustomSelectProps {
 	labelClassName?: string;
 	inputClassName?: string;
 	dropdownClassName?: string;
+	dropdownZIndex?: number;
 	hintClassName?: string;
 	leftAdornment?: React.ReactNode;
 	rightAdornment?: React.ReactNode;
 	className?: string;
 	autoFocus?: boolean;
 	tabIndex?: number;
-	onBlur?: React.FocusEventHandler<HTMLButtonElement>;
-	onFocus?: React.FocusEventHandler<HTMLButtonElement>;
+	onFocus?: React.FocusEventHandler<HTMLButtonElement | HTMLInputElement>;
+	onBlur?: React.FocusEventHandler<HTMLButtonElement | HTMLInputElement>;
 	'aria-describedby'?: string;
 	'aria-invalid'?: boolean;
 }
@@ -100,7 +109,10 @@ const findNextEnabledIndex = (
 	return -1;
 };
 
-const CustomSelect = React.forwardRef<HTMLButtonElement, CustomSelectProps>(
+const CustomSelect = React.forwardRef<
+	HTMLButtonElement | HTMLInputElement,
+	CustomSelectProps
+>(
 	(
 		{
 			id,
@@ -126,6 +138,7 @@ const CustomSelect = React.forwardRef<HTMLButtonElement, CustomSelectProps>(
 			labelClassName,
 			inputClassName,
 			dropdownClassName,
+			dropdownZIndex = 1200,
 			hintClassName,
 			leftAdornment,
 			rightAdornment,
@@ -143,8 +156,8 @@ const CustomSelect = React.forwardRef<HTMLButtonElement, CustomSelectProps>(
 		const inputId = id ?? name ?? `custom-select-${generatedId}`;
 		const listboxId = `${inputId}-listbox`;
 		const wrapperRef = React.useRef<HTMLDivElement>(null);
-		const searchInputRef = React.useRef<HTMLInputElement>(null);
 		const dropdownRef = React.useRef<HTMLDivElement>(null);
+		const [isClient, setIsClient] = React.useState(false);
 
 		const isControlled = value !== undefined;
 		const [uncontrolledValue, setUncontrolledValue] = React.useState<
@@ -156,6 +169,8 @@ const CustomSelect = React.forwardRef<HTMLButtonElement, CustomSelectProps>(
 		const [searchTerm, setSearchTerm] = React.useState('');
 		const [highlightedIndex, setHighlightedIndex] = React.useState(-1);
 		const [openUpward, setOpenUpward] = React.useState(false);
+		const [dropdownPosition, setDropdownPosition] =
+			React.useState<DropdownPosition | null>(null);
 
 		const errorMessage = getErrorMessage(error);
 		const isError = Boolean(error) && !disabled;
@@ -211,13 +226,16 @@ const CustomSelect = React.forwardRef<HTMLButtonElement, CustomSelectProps>(
 			setHighlightedIndex(-1);
 		}, []);
 
-		const openDropdown = React.useCallback(() => {
+		const openDropdown = React.useCallback((preserveSearch = false) => {
 			if (disabled || readOnly) {
 				return;
 			}
 
 			setIsOpen(true);
-			setSearchTerm('');
+
+			if (!preserveSearch) {
+				setSearchTerm('');
+			}
 		}, [disabled, readOnly]);
 
 		const handleSelectOption = React.useCallback(
@@ -270,6 +288,9 @@ const CustomSelect = React.forwardRef<HTMLButtonElement, CustomSelectProps>(
 					return;
 				}
 
+				const isTypingInput =
+					searchable && event.currentTarget instanceof HTMLInputElement;
+
 				switch (event.key) {
 					case 'ArrowDown': {
 						event.preventDefault();
@@ -283,6 +304,10 @@ const CustomSelect = React.forwardRef<HTMLButtonElement, CustomSelectProps>(
 					}
 					case 'Enter':
 					case ' ': {
+						if (event.key === ' ' && isTypingInput) {
+							break;
+						}
+
 						event.preventDefault();
 
 						if (!isOpen) {
@@ -318,6 +343,7 @@ const CustomSelect = React.forwardRef<HTMLButtonElement, CustomSelectProps>(
 				isOpen,
 				moveHighlight,
 				openDropdown,
+				searchable,
 				readOnly,
 			]
 		);
@@ -333,16 +359,8 @@ const CustomSelect = React.forwardRef<HTMLButtonElement, CustomSelectProps>(
 		}, [filteredOptions, isOpen, selectedValue]);
 
 		React.useEffect(() => {
-			if (!isOpen) {
-				return;
-			}
-
-			if (searchable) {
-				window.requestAnimationFrame(() => {
-					searchInputRef.current?.focus();
-				});
-			}
-		}, [isOpen, searchable]);
+			setIsClient(true);
+		}, []);
 
 		React.useEffect(() => {
 			if (!isOpen || highlightedIndex < 0) {
@@ -362,12 +380,16 @@ const CustomSelect = React.forwardRef<HTMLButtonElement, CustomSelectProps>(
 			}
 
 			const handleOutsideClick = (event: MouseEvent) => {
+				const target = event.target as Node;
+
 				if (
-					wrapperRef.current &&
-					!wrapperRef.current.contains(event.target as Node)
+					wrapperRef.current?.contains(target) ||
+					dropdownRef.current?.contains(target)
 				) {
-					closeDropdown();
+					return;
 				}
+
+				closeDropdown();
 			};
 
 			document.addEventListener('mousedown', handleOutsideClick);
@@ -378,8 +400,13 @@ const CustomSelect = React.forwardRef<HTMLButtonElement, CustomSelectProps>(
 
 		React.useEffect(() => {
 			if (!isOpen) {
+				setDropdownPosition(null);
 				return;
 			}
+
+			const VIEWPORT_MARGIN = 8;
+			const TRIGGER_GAP = 4;
+			const MIN_DROPDOWN_HEIGHT = 160;
 
 			const updatePlacement = () => {
 				const triggerRect = wrapperRef.current?.getBoundingClientRect();
@@ -387,11 +414,38 @@ const CustomSelect = React.forwardRef<HTMLButtonElement, CustomSelectProps>(
 					return;
 				}
 
-				const dropdownHeight = dropdownRef.current?.offsetHeight ?? 280;
-				const spaceBelow = window.innerHeight - triggerRect.bottom;
-				const spaceAbove = triggerRect.top;
+				const dropdownHeight = dropdownRef.current?.offsetHeight ?? 0;
+				const estimatedHeight = Math.max(dropdownHeight, MIN_DROPDOWN_HEIGHT);
+				const spaceBelow = Math.max(
+					0,
+					window.innerHeight - triggerRect.bottom - VIEWPORT_MARGIN
+				);
+				const spaceAbove = Math.max(0, triggerRect.top - VIEWPORT_MARGIN);
+				const shouldOpenUpward =
+					spaceBelow < estimatedHeight && spaceAbove > spaceBelow;
 
-				setOpenUpward(spaceBelow < dropdownHeight && spaceAbove > spaceBelow);
+				const width = Math.min(
+					triggerRect.width,
+					window.innerWidth - VIEWPORT_MARGIN * 2
+				);
+				const left = Math.min(
+					Math.max(triggerRect.left, VIEWPORT_MARGIN),
+					window.innerWidth - width - VIEWPORT_MARGIN
+				);
+				const maxListHeight = Math.max(
+					120,
+					(shouldOpenUpward ? spaceAbove : spaceBelow) - TRIGGER_GAP
+				);
+
+				setOpenUpward(shouldOpenUpward);
+				setDropdownPosition({
+					left,
+					top: shouldOpenUpward
+						? triggerRect.top - TRIGGER_GAP
+						: triggerRect.bottom + TRIGGER_GAP,
+					width,
+					maxListHeight,
+				});
 			};
 
 			const raf = window.requestAnimationFrame(updatePlacement);
@@ -403,7 +457,18 @@ const CustomSelect = React.forwardRef<HTMLButtonElement, CustomSelectProps>(
 				window.removeEventListener('resize', updatePlacement);
 				window.removeEventListener('scroll', updatePlacement, true);
 			};
-		}, [filteredOptions.length, isOpen, searchable]);
+		}, [filteredOptions.length, isOpen]);
+
+		const searchablePlaceholder =
+			isOpen
+				? searchPlaceholder
+				: typeof placeholder === 'string'
+					? placeholder
+					: 'Selecione uma opção';
+
+		const searchableInputValue = isOpen
+			? searchTerm
+			: selectedOption?.label ?? '';
 
 		return (
 			<div className={cn('w-full', containerClassName)}>
@@ -427,61 +492,108 @@ const CustomSelect = React.forwardRef<HTMLButtonElement, CustomSelectProps>(
 						</span>
 					) : null}
 
-					<button
-						id={inputId}
-						ref={ref}
-						type="button"
-						disabled={disabled}
-						autoFocus={autoFocus}
-						tabIndex={tabIndex}
-						onBlur={onBlur}
-						onFocus={onFocus}
-						onClick={() => (isOpen ? closeDropdown() : openDropdown())}
-						onKeyDown={handleKeyDown}
-						role="combobox"
-						aria-haspopup="listbox"
-						aria-controls={listboxId}
-						aria-expanded={isOpen}
-						aria-activedescendant={activeDescendantId}
-						aria-invalid={isError || ariaInvalid ? true : undefined}
-						aria-describedby={resolvedAriaDescribedBy || undefined}
-						className={cn(
-							textLikeBaseClasses,
-							textLikeStateClasses,
-							'flex items-center justify-between gap-2 text-left',
-							fieldPaddingClasses,
-							readOnly && 'cursor-default',
-							className,
-							inputClassName
-						)}
-					>
-						<span
+					{searchable ? (
+						<input
+							id={inputId}
+							ref={ref as React.Ref<HTMLInputElement>}
+							type="text"
+							disabled={disabled}
+							readOnly={readOnly}
+							autoFocus={autoFocus}
+							tabIndex={tabIndex}
+							onBlur={onBlur}
+							onFocus={onFocus}
+							onClick={() => {
+								if (!isOpen) {
+									openDropdown();
+								}
+							}}
+							onChange={(event) => {
+								setSearchTerm(event.target.value);
+
+								if (!isOpen) {
+									openDropdown(true);
+								}
+							}}
+							onKeyDown={handleKeyDown}
+							role="combobox"
+							aria-autocomplete="list"
+							aria-haspopup="listbox"
+							aria-controls={listboxId}
+							aria-expanded={isOpen}
+							aria-activedescendant={activeDescendantId}
+							aria-invalid={isError || ariaInvalid ? true : undefined}
+							aria-describedby={resolvedAriaDescribedBy || undefined}
+							placeholder={searchablePlaceholder}
+							value={searchableInputValue}
 							className={cn(
-								'truncate',
-								!selectedOption && 'text-gray-400 dark:text-white/30'
+								textLikeBaseClasses,
+								textLikeStateClasses,
+								'text-left',
+								fieldPaddingClasses,
+								readOnly && 'cursor-default',
+								className,
+								inputClassName,
+								!isOpen && !selectedOption && 'text-gray-400 dark:text-white/30'
+							)}
+						/>
+					) : (
+						<button
+							id={inputId}
+							ref={ref as React.Ref<HTMLButtonElement>}
+							type="button"
+							disabled={disabled}
+							autoFocus={autoFocus}
+							tabIndex={tabIndex}
+							onBlur={onBlur}
+							onFocus={onFocus}
+							onClick={() => (isOpen ? closeDropdown() : openDropdown())}
+							onKeyDown={handleKeyDown}
+							role="combobox"
+							aria-haspopup="listbox"
+							aria-controls={listboxId}
+							aria-expanded={isOpen}
+							aria-activedescendant={activeDescendantId}
+							aria-invalid={isError || ariaInvalid ? true : undefined}
+							aria-describedby={resolvedAriaDescribedBy || undefined}
+							className={cn(
+								textLikeBaseClasses,
+								textLikeStateClasses,
+								'flex items-center justify-between gap-2 text-left',
+								fieldPaddingClasses,
+								readOnly && 'cursor-default',
+								className,
+								inputClassName
 							)}
 						>
-							{selectedOption?.label ?? placeholder}
-						</span>
-
-						<span className="pointer-events-none absolute inset-y-0 right-3 flex items-center gap-2 text-gray-400 dark:text-gray-500">
-							{rightAdornment}
-							<svg
-								viewBox="0 0 20 20"
-								className={cn('h-4 w-4 transition-transform', isOpen && 'rotate-180')}
-								fill="none"
-								xmlns="http://www.w3.org/2000/svg"
+							<span
+								className={cn(
+									'truncate',
+									!selectedOption && 'text-gray-400 dark:text-white/30'
+								)}
 							>
-								<path
-									d="M5 7.5L10 12.5L15 7.5"
-									stroke="currentColor"
-									strokeWidth="1.5"
-									strokeLinecap="round"
-									strokeLinejoin="round"
-								/>
-							</svg>
-						</span>
-					</button>
+								{selectedOption?.label ?? placeholder}
+							</span>
+						</button>
+					)}
+
+					<span className="pointer-events-none absolute inset-y-0 right-3 flex items-center gap-2 text-gray-400 dark:text-gray-500">
+						{rightAdornment}
+						<svg
+							viewBox="0 0 20 20"
+							className={cn('h-4 w-4 transition-transform', isOpen && 'rotate-180')}
+							fill="none"
+							xmlns="http://www.w3.org/2000/svg"
+						>
+							<path
+								d="M5 7.5L10 12.5L15 7.5"
+								stroke="currentColor"
+								strokeWidth="1.5"
+								strokeLinecap="round"
+								strokeLinejoin="round"
+							/>
+						</svg>
+					</span>
 
 					<input
 						type="hidden"
@@ -491,73 +603,72 @@ const CustomSelect = React.forwardRef<HTMLButtonElement, CustomSelectProps>(
 						readOnly
 					/>
 
-					{isOpen ? (
-						<div
-							ref={dropdownRef}
-							className={cn(
-								'absolute left-0 z-50 w-full rounded-lg bg-(--cor-edit) shadow-theme-lg dark:bg-(--dark-cor-edit) dark:shadow-theme-xl',
-								openUpward ? 'bottom-full mb-1' : 'top-full mt-1',
-								dropdownClassName
-							)}
-						>
-							{searchable ? (
-								<div className="p-2">
-									<input
-										ref={searchInputRef}
-										type="text"
-										value={searchTerm}
-										onChange={(event) => setSearchTerm(event.target.value)}
-										onKeyDown={handleKeyDown}
-										placeholder={searchPlaceholder}
-										autoComplete="off"
-										className="h-9 w-full rounded-md border border-transparent bg-(--background) px-3 text-sm text-(--cor-texto) ring-1 ring-(--cor-borda)/55 transition-all duration-200 placeholder:text-gray-400 focus:outline-hidden focus:ring-2 focus:ring-brand-500/28 dark:bg-(--dark-background) dark:text-(--dark-cor-texto) dark:ring-(--dark-cor-borda)/65 dark:placeholder:text-white/30 dark:focus:ring-brand-500/35"
-									/>
-								</div>
-							) : null}
-
-							<ul id={listboxId} role="listbox" className="max-h-60 overflow-auto py-1">
-								{filteredOptions.length === 0 ? (
-									<li className="px-3 py-2 text-sm text-gray-500 dark:text-gray-400">
-										{noOptionsText}
-									</li>
-								) : (
-									filteredOptions.map((option, index) => {
-										const isSelected = option.value === selectedValue;
-										const isHighlighted = highlightedIndex === index;
-
-										return (
-											<li
-												id={`${inputId}-option-${index}`}
-												key={`${String(option.value)}-${index}`}
-												role="option"
-												aria-selected={isSelected}
-												data-option-index={index}
-												onMouseEnter={() => {
-													if (!option.disabled) {
-														setHighlightedIndex(index);
-													}
-												}}
-												onMouseDown={(event) => event.preventDefault()}
-												onClick={() => handleSelectOption(option)}
-												className={cn(
-													'mx-1 rounded-md px-3 py-2 text-sm transition-colors',
-													option.disabled
-														? 'cursor-not-allowed text-gray-400 dark:text-gray-500'
-														: isSelected
-															? 'bg-brand-500/12 text-(--cor-texto) dark:bg-brand-500/20 dark:text-(--dark-cor-texto)'
-															: isHighlighted
-																? 'bg-(--cor-button-hover)/25 text-(--cor-texto) dark:bg-(--dark-cor-button-hover)/30 dark:text-(--dark-cor-texto)'
-																: 'text-(--cor-texto) hover:bg-(--cor-button-hover)/20 dark:text-(--dark-cor-texto) dark:hover:bg-(--dark-cor-button-hover)/25'
-												)}
-											>
-												{option.label}
+					{isOpen && isClient && dropdownPosition
+						? createPortal(
+								<div
+									ref={dropdownRef}
+									className={cn(
+										'fixed rounded-lg bg-(--cor-edit) shadow-theme-lg dark:bg-(--dark-cor-edit) dark:shadow-theme-xl',
+										openUpward && '-translate-y-full',
+										dropdownClassName
+									)}
+									style={{
+										left: dropdownPosition.left,
+										top: dropdownPosition.top,
+										width: dropdownPosition.width,
+										zIndex: dropdownZIndex,
+									}}
+								>
+									<ul
+										id={listboxId}
+										role="listbox"
+										className="overflow-auto py-1"
+										style={{ maxHeight: dropdownPosition.maxListHeight }}
+									>
+										{filteredOptions.length === 0 ? (
+											<li className="px-3 py-2 text-sm text-gray-500 dark:text-gray-400">
+												{noOptionsText}
 											</li>
-										);
-									})
-								)}
-							</ul>
-						</div>
-					) : null}
+										) : (
+											filteredOptions.map((option, index) => {
+												const isSelected = option.value === selectedValue;
+												const isHighlighted = highlightedIndex === index;
+
+												return (
+													<li
+														id={`${inputId}-option-${index}`}
+														key={`${String(option.value)}-${index}`}
+														role="option"
+														aria-selected={isSelected}
+														data-option-index={index}
+														onMouseEnter={() => {
+															if (!option.disabled) {
+																setHighlightedIndex(index);
+															}
+														}}
+														onMouseDown={(event) => event.preventDefault()}
+														onClick={() => handleSelectOption(option)}
+														className={cn(
+															'mx-1 rounded-md px-3 py-2 text-sm transition-colors',
+															option.disabled
+																? 'cursor-not-allowed text-gray-400 dark:text-gray-500'
+																: isSelected
+																	? 'bg-brand-500/12 text-(--cor-texto) dark:bg-brand-500/20 dark:text-(--dark-cor-texto)'
+																	: isHighlighted
+																		? 'bg-(--cor-button-hover)/25 text-(--cor-texto) dark:bg-(--dark-cor-button-hover)/30 dark:text-(--dark-cor-texto)'
+																		: 'text-(--cor-texto) hover:bg-(--cor-button-hover)/20 dark:text-(--dark-cor-texto) dark:hover:bg-(--dark-cor-button-hover)/25'
+														)}
+													>
+														{option.label}
+													</li>
+												);
+											})
+										)}
+									</ul>
+								</div>,
+								document.body
+							)
+						: null}
 				</div>
 
 				{feedback ? (
