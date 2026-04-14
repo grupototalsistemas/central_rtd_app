@@ -15,33 +15,64 @@ type DatepickerLocale = flatpickr.Options.LocaleKey | Partial<flatpickr.CustomLo
 
 type DateValueChangeHandler = (value: string, date: Date | null) => void;
 
+/**
+ * Props do `CustomDateInput`.
+ *
+ * Funcionamento:
+ * - Campo textual de data com parsing estrito por formato.
+ * - Pode operar com e sem datepicker (`flatpickr`).
+ * - Separa formato exibido (`displayFormat`) do valor emitido (`outputFormat`).
+ */
 export interface CustomDateInputProps
 	extends Omit<
 		React.InputHTMLAttributes<HTMLInputElement>,
 		'type' | 'value' | 'defaultValue'
 	> {
+	/** Valor controlado do campo (string de data). */
 	value?: string;
+	/** Valor inicial para modo nao controlado. */
 	defaultValue?: string;
+	/** Rotulo exibido acima do campo. */
 	label?: React.ReactNode;
+	/** Texto de apoio exibido abaixo quando nao ha erro. */
 	hint?: React.ReactNode;
+	/** Texto auxiliar abaixo do campo (prioridade sobre `hint`). */
 	helperText?: React.ReactNode;
+	/** ID customizado para o texto de feedback (aria-describedby). */
 	helperId?: string;
+	/** Estado de erro (boolean, string ou FieldError do react-hook-form). */
 	error?: InputError;
+	/** Estado visual de sucesso quando nao ha erro. */
 	success?: boolean;
+	/** Classe para o container externo (`div` raiz). */
 	containerClassName?: string;
+	/** Classe para o componente de label. */
 	labelClassName?: string;
+	/** Classe adicional aplicada no `<input />`. */
 	inputClassName?: string;
+	/** Classe para o texto de hint/helper/erro. */
 	hintClassName?: string;
+	/** Conteudo renderizado no lado esquerdo (icone, prefixo etc.). */
 	leftAdornment?: React.ReactNode;
+	/** Conteudo renderizado no lado direito (icone, sufixo etc.). */
 	rightAdornment?: React.ReactNode;
+	/** Formato visual aplicado no input. Ex.: `dd/MM/yyyy`. */
 	displayFormat?: string;
+	/** Formatos aceitos para parsing manual digitado pelo usuario. */
 	acceptedInputFormats?: readonly string[];
+	/** Formato emitido em `onValueChange`. Se ausente, usa `displayFormat`. */
 	outputFormat?: string;
+	/** Locale do datepicker (`flatpickr`). */
 	locale?: DatepickerLocale;
+	/** Habilita/desabilita a inicializacao do datepicker. */
 	showDatepicker?: boolean;
+	/** Exibe botao de calendario quando datepicker esta ativo. */
 	showCalendarButton?: boolean;
+	/** Define se o datepicker abre automaticamente no foco do input. */
 	openDatepickerOnFocus?: boolean;
+	/** Callback principal com valor formatado e objeto Date normalizado. */
 	onValueChange?: DateValueChangeHandler;
+	/** Callback disparado no blur quando a data digitada e invalida. */
 	onInvalidDate?: (inputValue: string) => void;
 }
 
@@ -145,6 +176,47 @@ const setForwardedRef = <T,>(
 	}
 };
 
+/**
+ * Campo de data com parsing estrito e integracao opcional com calendario.
+ *
+ * Integracao com react-hook-form + zod:
+ * - Recomendado usar `Controller` para sincronizar `value` e `onValueChange`.
+ * - O schema zod pode validar formato e obrigatoriedade do valor emitido.
+ *
+ * @example
+ * ```tsx
+ * const schema = z.object({
+ *   dataNascimento: z
+ *     .string()
+ *     .min(1, 'Informe a data.')
+ *     .regex(/^\d{2}\/\d{2}\/\d{4}$/, 'Formato esperado: dd/MM/yyyy'),
+ * });
+ *
+ * type FormValues = z.infer<typeof schema>;
+ *
+ * const { control, formState: { errors } } = useForm<FormValues>({
+ *   resolver: zodResolver(schema),
+ *   defaultValues: { dataNascimento: '' },
+ * });
+ *
+ * <Controller
+ *   name="dataNascimento"
+ *   control={control}
+ *   render={({ field }) => (
+ *     <CustomDateInput
+ *       label="Data de nascimento"
+ *       displayFormat="dd/MM/yyyy"
+ *       outputFormat="dd/MM/yyyy"
+ *       error={errors.dataNascimento}
+ *       value={field.value}
+ *       onValueChange={(nextValue) => field.onChange(nextValue)}
+ *       onBlur={field.onBlur}
+ *       ref={field.ref}
+ *     />
+ *   )}
+ * />
+ * ```
+ */
 const CustomDateInput = React.forwardRef<HTMLInputElement, CustomDateInputProps>(
 	(
 		{
@@ -389,12 +461,13 @@ const CustomDateInput = React.forwardRef<HTMLInputElement, CustomDateInputProps>
 
 			const picker = flatpickr(inputElement, {
 				allowInput: true,
+				disableMobile: true,
 				appendTo: document.body,
 				clickOpens: openDatepickerOnFocus,
 				locale,
 				monthSelectorType: 'static',
-				position: (_instance, _customElement) => {
-					positionPicker(_instance);
+				position: (instance) => {
+					positionPicker(instance);
 				},
 				positionElement: inputElement,
 				dateFormat: toFlatpickrFormat(displayFormat),

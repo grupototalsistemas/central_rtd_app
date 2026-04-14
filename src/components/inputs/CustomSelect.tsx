@@ -14,46 +14,92 @@ interface DropdownPosition {
 	maxListHeight: number;
 }
 
+/** Opcao exibida no dropdown do select. */
 export interface CustomSelectOption {
+	/** Valor de dominio da opcao. */
 	value: SelectValue;
+	/** Texto exibido para o usuario. */
 	label: string;
+	/** Quando true, impede selecao e navegacao por teclado na opcao. */
 	disabled?: boolean;
 }
 
+/**
+ * Props do `CustomSelect`.
+ *
+ * Funcionamento:
+ * - Select customizado com suporte a modo controlado e nao controlado.
+ * - Pode operar como botao (nao pesquisavel) ou input combobox (pesquisavel).
+ * - Renderiza dropdown via portal, com ajuste automatico de posicao no viewport.
+ */
 export interface CustomSelectProps {
+	/** ID do campo para label/acessibilidade. */
 	id?: string;
+	/** Nome enviado em formulario via input hidden. */
 	name?: string;
+	/** Rotulo exibido acima do campo. */
 	label?: React.ReactNode;
+	/** Placeholder quando nao ha opcao selecionada. */
 	placeholder?: React.ReactNode;
+	/** Texto de apoio exibido abaixo quando nao ha erro. */
 	hint?: React.ReactNode;
+	/** Texto auxiliar abaixo do campo (prioridade sobre `hint`). */
 	helperText?: React.ReactNode;
+	/** ID customizado para o texto de feedback (aria-describedby). */
 	helperId?: string;
+	/** Estado de erro (boolean, string ou FieldError do react-hook-form). */
 	error?: SelectError;
+	/** Estado visual de sucesso quando nao ha erro. */
 	success?: boolean;
+	/** Desabilita interacao com campo e dropdown. */
 	disabled?: boolean;
+	/** Mantem leitura sem permitir alteracao de valor. */
 	readOnly?: boolean;
+	/** Marca o campo como obrigatorio no input hidden. */
 	required?: boolean;
+	/** Lista completa de opcoes disponiveis. */
 	options: CustomSelectOption[];
+	/** Valor controlado selecionado. */
 	value?: SelectValue | null;
+	/** Valor inicial para modo nao controlado. */
 	defaultValue?: SelectValue | null;
+	/** Callback disparado ao selecionar uma opcao valida. */
 	onChange?: (value: SelectValue | null) => void;
+	/** Habilita input de busca dentro do campo. */
 	searchable?: boolean;
+	/** Placeholder do input de busca quando dropdown aberto. */
 	searchPlaceholder?: string;
+	/** Texto exibido quando filtro de busca nao encontra resultados. */
 	noOptionsText?: React.ReactNode;
+	/** Classe para o container externo (`div` raiz). */
 	containerClassName?: string;
+	/** Classe para o componente de label. */
 	labelClassName?: string;
+	/** Classe adicional no gatilho (`input` ou `button`). */
 	inputClassName?: string;
+	/** Classe adicional no painel de dropdown. */
 	dropdownClassName?: string;
+	/** Z-index aplicado ao dropdown renderizado em portal. */
 	dropdownZIndex?: number;
+	/** Classe para o texto de hint/helper/erro. */
 	hintClassName?: string;
+	/** Conteudo exibido no lado esquerdo do campo. */
 	leftAdornment?: React.ReactNode;
+	/** Conteudo exibido no lado direito, antes da seta. */
 	rightAdornment?: React.ReactNode;
+	/** Classe adicional no campo principal. */
 	className?: string;
+	/** Define foco automatico no carregamento. */
 	autoFocus?: boolean;
+	/** Controla ordem de tabulacao do gatilho. */
 	tabIndex?: number;
+	/** Handler de foco do gatilho. */
 	onFocus?: React.FocusEventHandler<HTMLButtonElement | HTMLInputElement>;
+	/** Handler de blur do gatilho. */
 	onBlur?: React.FocusEventHandler<HTMLButtonElement | HTMLInputElement>;
+	/** IDs auxiliares de acessibilidade para descricao. */
 	'aria-describedby'?: string;
+	/** Estado aria de erro adicional (alem de `error`). */
 	'aria-invalid'?: boolean;
 }
 
@@ -109,6 +155,46 @@ const findNextEnabledIndex = (
 	return -1;
 };
 
+/**
+ * Select customizado com suporte a busca, teclado e portal para dropdown.
+ *
+ * Integracao com react-hook-form + zod:
+ * - Use `Controller` para mapear `value`/`onChange`.
+ * - Passe `error={errors.campo}` para refletir mensagens validadas por Zod.
+ *
+ * @example
+ * ```tsx
+ * const schema = z.object({
+ *   perfilId: z.union([z.string(), z.number()]).nullable().refine(Boolean, {
+ *     message: 'Selecione um perfil.',
+ *   }),
+ * });
+ *
+ * type FormValues = z.infer<typeof schema>;
+ *
+ * const { control, formState: { errors } } = useForm<FormValues>({
+ *   resolver: zodResolver(schema),
+ *   defaultValues: { perfilId: null },
+ * });
+ *
+ * <Controller
+ *   name="perfilId"
+ *   control={control}
+ *   render={({ field }) => (
+ *     <CustomSelect
+ *       label="Perfil"
+ *       options={perfis}
+ *       searchable
+ *       error={errors.perfilId}
+ *       value={field.value}
+ *       onChange={field.onChange}
+ *       onBlur={field.onBlur}
+ *       ref={field.ref}
+ *     />
+ *   )}
+ * />
+ * ```
+ */
 const CustomSelect = React.forwardRef<
 	HTMLButtonElement | HTMLInputElement,
 	CustomSelectProps

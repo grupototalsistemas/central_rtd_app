@@ -7,66 +7,120 @@ import type { FieldError } from 'react-hook-form';
 type InputError = boolean | string | FieldError | null | undefined;
 type SearchFilterValue = string | number;
 
+/** Opcao de filtro exibida no dropdown lateral da busca. */
 export interface CustomSearchFilterOption {
+	/** Valor tecnico do filtro. */
 	value: SearchFilterValue;
+	/** Rotulo exibido para o usuario. */
 	label: React.ReactNode;
+	/** Desabilita a opcao no dropdown de filtro. */
 	disabled?: boolean;
 }
 
+/** Argumentos recebidos ao customizar renderizacao do dropdown de filtro. */
 export interface RenderFilterDropdownArgs {
+	/** Valor de filtro atualmente selecionado. */
 	selectedFilter: SearchFilterValue | null;
+	/** Opcao completa selecionada (ou null). */
 	selectedOption: CustomSearchFilterOption | null;
+	/** Lista de opcoes disponiveis para filtro. */
 	filterOptions: CustomSearchFilterOption[];
+	/** Funcao para selecionar/trocar filtro. */
 	onSelectFilter: (value: SearchFilterValue | null) => void;
+	/** Funcao para fechar o dropdown de filtro. */
 	closeDropdown: () => void;
 }
 
+/**
+ * Props do `CustomSearch`.
+ *
+ * Funcionamento:
+ * - Campo de busca com suporte a valor controlado/nao controlado.
+ * - Pode disparar pesquisa no Enter (`searchOnChange=false`) ou por debounce.
+ * - Opcionalmente inclui dropdown de filtros acoplado ao campo.
+ */
 export interface CustomSearchProps
 	extends Omit<
 		React.InputHTMLAttributes<HTMLInputElement>,
 		'type' | 'value' | 'defaultValue' | 'onChange'
 	> {
+	/** Valor controlado do campo de busca. */
 	value?: string;
+	/** Valor inicial para modo nao controlado. */
 	defaultValue?: string;
+	/** Handler nativo de mudanca do input. */
 	onChange?: React.ChangeEventHandler<HTMLInputElement>;
+	/** Callback simplificado com o valor textual atual. */
 	onValueChange?: (value: string) => void;
+	/** Callback principal para executar a pesquisa com filtro atual. */
 	onSearch?: (
 		value: string,
 		selectedFilter: CustomSearchFilterOption | null
 	) => void;
+	/** Quando true, pesquisa automaticamente a cada alteracao (com debounce). */
 	searchOnChange?: boolean;
+	/** Tempo de debounce (ms) para `searchOnChange`. */
 	searchDebounceMs?: number;
+	/** Quando true, dispara pesquisa inicial no mount com `searchOnChange`. */
 	triggerSearchOnMount?: boolean;
+	/** Rotulo exibido acima do campo. */
 	label?: React.ReactNode;
+	/** Texto de apoio exibido abaixo quando nao ha erro. */
 	hint?: React.ReactNode;
+	/** Texto auxiliar abaixo do campo (prioridade sobre `hint`). */
 	helperText?: React.ReactNode;
+	/** ID customizado para o texto de feedback (aria-describedby). */
 	helperId?: string;
+	/** Estado de erro (boolean, string ou FieldError do react-hook-form). */
 	error?: InputError;
+	/** Estado visual de sucesso quando nao ha erro. */
 	success?: boolean;
+	/** Classe para o container externo (`div` raiz). */
 	containerClassName?: string;
+	/** Classe para o componente de label. */
 	labelClassName?: string;
+	/** Classe adicional aplicada no `<input />`. */
 	inputClassName?: string;
+	/** Classe para o texto de hint/helper/erro. */
 	hintClassName?: string;
+	/** Classe adicional para o texto lateral (`rightText`). */
 	rightTextClassName?: string;
+	/** Icone/adornment para o lado esquerdo do campo. */
 	leftIcon?: React.ReactNode;
+	/** Texto exibido no lado direito do campo. */
 	rightText?: React.ReactNode;
+	/** Exibe botao para limpar o valor da busca. */
 	showClearButton?: boolean;
+	/** Label de acessibilidade do botao de limpar. */
 	clearAriaLabel?: string;
+	/** Callback executado ao limpar o campo. */
 	onClear?: () => void;
+	/** Habilita dropdown de filtros ao lado do campo. */
 	enableFilterDropdown?: boolean;
+	/** Lista de opcoes do filtro. */
 	filterOptions?: CustomSearchFilterOption[];
+	/** Valor de filtro controlado. */
 	selectedFilter?: SearchFilterValue | null;
+	/** Valor inicial de filtro no modo nao controlado. */
 	defaultFilter?: SearchFilterValue | null;
+	/** Callback ao selecionar novo filtro. */
 	onFilterChange?: (
 		value: SearchFilterValue | null,
 		option: CustomSearchFilterOption | null
 	) => void;
+	/** Rotulo base do botao de filtro quando nao ha selecao. */
 	filterButtonLabel?: React.ReactNode;
+	/** Texto da opcao de reset de filtro (quando habilitada). */
 	allFiltersLabel?: React.ReactNode;
+	/** Habilita opcao para limpar filtro e voltar para "todos". */
 	allowResetFilter?: boolean;
+	/** Texto exibido quando nao ha opcoes de filtro. */
 	noFilterOptionsText?: React.ReactNode;
+	/** Classe adicional no botao de abrir filtros. */
 	filterButtonClassName?: string;
+	/** Classe adicional no painel de dropdown de filtros. */
 	dropdownClassName?: string;
+	/** Renderizacao customizada completa do dropdown de filtros. */
 	renderFilterDropdown?: (args: RenderFilterDropdownArgs) => React.ReactNode;
 }
 
@@ -83,6 +137,50 @@ const getErrorMessage = (error: InputError): string | undefined => {
 	return undefined;
 };
 
+/**
+ * Campo de busca com gatilho manual/automatico e filtros opcionais.
+ *
+ * Integracao com react-hook-form + zod:
+ * - O termo pode ficar no RHF, validado por Zod (ex.: minimo de caracteres).
+ * - O filtro pode ser outro campo do schema, via `Controller` separado.
+ *
+ * @example
+ * ```tsx
+ * const schema = z.object({
+ *   termo: z.string().min(2, 'Digite ao menos 2 caracteres.'),
+ *   filtro: z.union([z.string(), z.number()]).nullable(),
+ * });
+ *
+ * type FormValues = z.infer<typeof schema>;
+ *
+ * const { control, watch, setValue, formState: { errors } } = useForm<FormValues>({
+ *   resolver: zodResolver(schema),
+ *   defaultValues: { termo: '', filtro: null },
+ * });
+ *
+ * <Controller
+ *   name="termo"
+ *   control={control}
+ *   render={({ field }) => (
+ *     <CustomSearch
+ *       label="Pesquisar"
+ *       error={errors.termo}
+ *       value={field.value}
+ *       onValueChange={field.onChange}
+ *       onBlur={field.onBlur}
+ *       ref={field.ref}
+ *       enableFilterDropdown
+ *       filterOptions={opcoesFiltro}
+ *       selectedFilter={watch('filtro')}
+ *       onFilterChange={(nextFilter) => setValue('filtro', nextFilter)}
+ *       onSearch={(term, selectedFilter) => {
+ *         executarBusca(term, selectedFilter?.value ?? null);
+ *       }}
+ *     />
+ *   )}
+ * />
+ * ```
+ */
 const CustomSearch = React.forwardRef<HTMLInputElement, CustomSearchProps>(
 	(
 		{

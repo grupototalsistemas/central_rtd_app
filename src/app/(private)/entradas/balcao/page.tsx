@@ -12,6 +12,8 @@ import CustomTextbox from '@/components/inputs/CustomTextbox';
 import CustomSelect from '@/components/inputs/CustomSelect';
 import CustomDateInput from '@/components/inputs/CustomDateInput';
 import CustomSearch from '@/components/inputs/CustomSearch';
+import CustomSelectGrid from '@/components/inputs/CustomSelectGrid';
+import CustomButton from '@/components/buttons/CustomButton';
 
 const onlyDigits = (value: string): string => value.replace(/\D/g, '');
 
@@ -156,6 +158,21 @@ export default function BalcaoPage() {
         className="col-span-full space-y-4"
         noValidate
       >
+        {/* Botões utilitários */}
+        <div className="flex justify-end gap-6">
+          <CustomButton
+            size="lg"
+            title="Limpar Apresentante"
+            onClick={() => {}}
+          />
+          <CustomButton
+            backgroundColor="#940100"
+            hoverBackgroundColor="#F9A526"
+            size="lg"
+            title="Limpar tudo"
+            onClick={() => {}}
+          />
+        </div>
         {/* Apresentante */}
         <CardContainer
           title="Apresentante"
@@ -177,7 +194,7 @@ export default function BalcaoPage() {
               render={({ field }) => (
                 <CustomInput
                   label="Documento CPF/CNPJ"
-                  placeholder="Digite CPF ou CNPJ"
+                  placeholder="123.456.789-10"
                   autoComplete="off"
                   maxLength={18}
                   error={errors.documento}
@@ -205,7 +222,7 @@ export default function BalcaoPage() {
               render={({ field }) => (
                 <CustomInput
                   label="Nome"
-                  placeholder="Digite o nome do apresentante"
+                  placeholder="Nome do Apresentante"
                   autoComplete="off"
                   spellCheck={false}
                   maxLength={150}
@@ -233,7 +250,7 @@ export default function BalcaoPage() {
               render={({ field }) => (
                 <CustomInput
                   label="Contato"
-                  placeholder="Digite o telefone"
+                  placeholder="(21) 99999-0000"
                   autoComplete="off"
                   maxLength={15}
                   error={errors.contato}
@@ -261,7 +278,7 @@ export default function BalcaoPage() {
               render={({ field }) => (
                 <CustomInput
                   label="Email"
-                  placeholder="Digite o email do apresentante"
+                  placeholder="apresentante@apresentante.com.br"
                   type="email"
                   inputMode="email"
                   autoComplete="email"
@@ -315,7 +332,7 @@ export default function BalcaoPage() {
             render={({ field }) => (
               <CustomTextbox
                 label="Observações"
-                placeholder="Digite as observações sobre o apresentante"
+                placeholder="Observações sobre o apresentante"
                 resize="vertical"
                 autoComplete="off"
                 spellCheck={true}
@@ -325,7 +342,7 @@ export default function BalcaoPage() {
                 value={field.value}
                 onBlur={field.onBlur}
                 onChange={(event: React.ChangeEvent<HTMLTextAreaElement>) => {
-                  field.onChange(formatHourWithColon(event.target.value));
+                  field.onChange(event.target.value);
                 }}
                 ref={field.ref}
               />
@@ -399,24 +416,149 @@ export default function BalcaoPage() {
             />
 
             {/* Data da entrada */}
-            <CustomDateInput label="Data da Entrada" placeholder="DD/MM/AAAA" />
+            <CustomDateInput
+              label="Data da Entrada"
+              placeholder="DD/MM/AAAA"
+              autoComplete="off"
+              showDatepicker={true}
+            />
           </div>
 
-          <CustomSelect
-            label="Descrição"
-            searchable
-            options={[
-              { value: '6000', label: 'Descrição 1' },
-              { value: '6001', label: 'Descrição 2' },
-              { value: '6002', label: 'Descrição 3' },
-            ]}
-            placeholder="Selecione uma opção"
+          <CustomInput
+            label="Pesquisar"
+            placeholder="Digite a descrição ou código"
           />
+
+          <CustomSelectGrid
+            className="max-h-60 overflow-auto sm:grid-cols-1 md:grid-cols-2"
+            label="Serviços"
+            maxSelected={1}
+            items={[
+              {
+                value: '1',
+                label:
+                  'Registro de Título, Documento ou Papel com Valor Declarado',
+                description: 'Código 6000',
+              },
+              {
+                value: '2',
+                label:
+                  'Registro de mídia de documentos digitalizados ou nato-digitais até 5 gb',
+                description: 'Código 7000',
+              },
+              {
+                value: '3',
+                label: 'Tabelionato de Protestos',
+                description: 'Código 8000',
+              },
+              {
+                value: '4',
+                label: 'Registro Civil de Pessoas Naturais',
+                description: 'Código 9000',
+              },
+              {
+                value: '5',
+                label: 'Registro Civil de Pessoas Jurídicas',
+                description: 'Código 10000',
+              },
+              {
+                value: '6',
+                label: 'Registro de Títulos e Documentos',
+                description: 'Código 11000',
+              },
+              {
+                value: '7',
+                label: 'Registro de Distribuição',
+                description: 'Código 12000',
+              },
+              {
+                value: '8',
+                label: 'Registro de Imóveis Rurais',
+                description: 'Código 13000',
+              },
+              {
+                value: '9',
+                label: 'Registro de Imóveis Urbanos',
+                description: 'Código 14000',
+              },
+              {
+                value: '10',
+                label: 'Registro de Imóveis Especiais',
+                description: 'Código 15000',
+              },
+            ]}
+          />
+
+          {/* Configurações do ato */}
+          <div className="mb-6 grid grid-cols-2 gap-4 lg:grid-cols-3 xl:grid-cols-5">
+            <CustomInput
+              label="Quantidade"
+              placeholder="0"
+              autoComplete="off"
+              type="number"
+              defaultValue={1}
+            />
+
+            <CustomInput
+              label="Nomes"
+              placeholder="0"
+              autoComplete="off"
+              type="number"
+              defaultValue={0}
+            />
+
+            <CustomInput
+              label="Páginas"
+              placeholder="0"
+              autoComplete="off"
+              type="number"
+              defaultValue={0}
+            />
+
+            <CustomInput
+              label="Vias"
+              placeholder="0"
+              autoComplete="off"
+              type="number"
+              defaultValue={0}
+            />
+
+            <CustomInput
+              label="Diligências"
+              placeholder="0"
+              autoComplete="off"
+              type="number"
+              defaultValue={0}
+            />
+          </div>
+
+          {/* Botão de salvar */}
+          <div className="flex justify-end">
+            <CustomButton
+              size="lg"
+              type="submit"
+              title="Salvar"
+              onClick={() => console.log('Valores do formulario: ', watch())}
+            />
+          </div>
         </CardContainer>
 
-        {/* Botão de salvar */}
-        <div className="flex hidden justify-end">
-          <Button
+        {/* Desrição do recibo */}
+        <CardContainer
+          title="Descrição do Recibo"
+          description="Descrição detalhada do recibo."
+          collapsible={true}
+          columns={1}
+        >
+          <div className="flex justify-end">
+            <CustomButton
+              size="lg"
+              type="submit"
+              title="Finalizar"
+              onClick={() => console.log('Valores do formulario: ', watch())}
+            />
+
+            {/* <Button
             type="submit"
             size="sm"
             loading={isSubmitting}
@@ -424,8 +566,11 @@ export default function BalcaoPage() {
             onClick={() => console.log('Valores do formulario: ', watch())}
           >
             Salvar
-          </Button>
-        </div>
+          </Button> */}
+          </div>
+        </CardContainer>
+
+        {/* Botão de enviar */}
       </form>
     </PageTitle>
   );

@@ -6,18 +6,37 @@ import type { FieldError } from 'react-hook-form';
 type InputError = boolean | string | FieldError | null | undefined;
 type TextareaResize = 'none' | 'vertical' | 'horizontal' | 'both';
 
+/**
+ * Props do `CustomTextbox`.
+ *
+ * Funcionamento:
+ * - Encapsula um `<textarea />` com estados visuais padronizados.
+ * - Repassa props nativas de textarea (maxLength, placeholder etc.).
+ * - Permite controle de redimensionamento via `resize`.
+ */
 export interface CustomTextboxProps
 	extends React.TextareaHTMLAttributes<HTMLTextAreaElement> {
+	/** Rotulo exibido acima do campo. */
 	label?: React.ReactNode;
+	/** Texto de apoio exibido abaixo quando nao ha erro. */
 	hint?: React.ReactNode;
+	/** Texto auxiliar abaixo do campo (prioridade sobre `hint`). */
 	helperText?: React.ReactNode;
+	/** ID customizado para o texto de feedback (aria-describedby). */
 	helperId?: string;
+	/** Estado de erro (boolean, string ou FieldError do react-hook-form). */
 	error?: InputError;
+	/** Estado visual de sucesso quando nao ha erro. */
 	success?: boolean;
+	/** Controle de resize do textarea. */
 	resize?: TextareaResize;
+	/** Classe para o container externo (`div` raiz). */
 	containerClassName?: string;
+	/** Classe para o componente de label. */
 	labelClassName?: string;
+	/** Classe adicional aplicada no `<textarea />`. */
 	inputClassName?: string;
+	/** Classe para o texto de hint/helper/erro. */
 	hintClassName?: string;
 }
 
@@ -41,6 +60,46 @@ const resizeClassMap: Record<TextareaResize, string> = {
 	both: 'resize',
 };
 
+/**
+ * Textarea reutilizavel com suporte a validacao visual e acessibilidade.
+ *
+ * Integracao com react-hook-form + zod:
+ * - Use `Controller` quando precisar de componente controlado.
+ * - Para campos simples, `register` tambem funciona por herdar props nativas.
+ *
+ * @example
+ * ```tsx
+ * const schema = z.object({
+ *   observacao: z
+ *     .string()
+ *     .min(10, 'Informe ao menos 10 caracteres.')
+ *     .max(500, 'Limite de 500 caracteres.'),
+ * });
+ *
+ * type FormValues = z.infer<typeof schema>;
+ *
+ * const { control, formState: { errors } } = useForm<FormValues>({
+ *   resolver: zodResolver(schema),
+ *   defaultValues: { observacao: '' },
+ * });
+ *
+ * <Controller
+ *   name="observacao"
+ *   control={control}
+ *   render={({ field }) => (
+ *     <CustomTextbox
+ *       label="Observacao"
+ *       resize="vertical"
+ *       error={errors.observacao}
+ *       value={field.value}
+ *       onChange={field.onChange}
+ *       onBlur={field.onBlur}
+ *       ref={field.ref}
+ *     />
+ *   )}
+ * />
+ * ```
+ */
 const CustomTextbox = React.forwardRef<HTMLTextAreaElement, CustomTextboxProps>(
 	(
 		{

@@ -6,20 +6,42 @@ import type { FieldError } from 'react-hook-form';
 type InputError = boolean | string | FieldError | null | undefined;
 type SupportedInputType = Exclude<React.HTMLInputTypeAttribute, 'date'>;
 
+/**
+ * Props do `CustomInput`.
+ *
+ * Funcionamento:
+ * - Encapsula um `<input />` com estados visuais de erro/sucesso/disabled.
+ * - Aceita adornos laterais (`leftAdornment` e `rightAdornment`) para tipos textuais.
+ * - Repassa props nativas de input (placeholder, autoComplete, maxLength etc.)
+ *   via `React.InputHTMLAttributes`, exceto `type` (tipado por `SupportedInputType`).
+ */
 export interface CustomInputProps
 	extends Omit<React.InputHTMLAttributes<HTMLInputElement>, 'type'> {
+	/** Tipo do input (exceto `date`, que possui componente proprio). */
 	type?: SupportedInputType;
+	/** Rotulo exibido acima do campo. */
 	label?: React.ReactNode;
+	/** Texto de apoio exibido abaixo quando nao ha erro. */
 	hint?: React.ReactNode;
+	/** Texto auxiliar abaixo do campo (prioridade sobre `hint`). */
 	helperText?: React.ReactNode;
+	/** ID customizado para o texto de feedback (aria-describedby). */
 	helperId?: string;
+	/** Estado de erro (boolean, string ou FieldError do react-hook-form). */
 	error?: InputError;
+	/** Estado visual de sucesso quando nao ha erro. */
 	success?: boolean;
+	/** Classe para o container externo (`div` raiz). */
 	containerClassName?: string;
+	/** Classe para o componente de label. */
 	labelClassName?: string;
+	/** Classe adicional aplicada no `<input />`. */
 	inputClassName?: string;
+	/** Classe para o texto de hint/helper/erro. */
 	hintClassName?: string;
+	/** Conteudo renderizado no lado esquerdo (icone, prefixo etc.). */
 	leftAdornment?: React.ReactNode;
+	/** Conteudo renderizado no lado direito (icone, sufixo etc.). */
 	rightAdornment?: React.ReactNode;
 }
 
@@ -36,6 +58,42 @@ const getErrorMessage = (error: InputError): string | undefined => {
 	return undefined;
 };
 
+/**
+ * Campo de entrada reutilizavel com suporte a tema, acessibilidade e feedback visual.
+ *
+ * Integracao com react-hook-form + zod:
+ * - Pode ser usado com `register` (campos simples) ou com `Controller`.
+ * - Passe `error={errors.campo}` para mostrar mensagens do schema Zod.
+ *
+ * @example
+ * ```tsx
+ * const schema = z.object({
+ *   nome: z.string().min(1, 'Informe o nome.'),
+ * });
+ *
+ * type FormValues = z.infer<typeof schema>;
+ *
+ * const { control, formState: { errors } } = useForm<FormValues>({
+ *   resolver: zodResolver(schema),
+ *   defaultValues: { nome: '' },
+ * });
+ *
+ * <Controller
+ *   name="nome"
+ *   control={control}
+ *   render={({ field }) => (
+ *     <CustomInput
+ *       label="Nome"
+ *       error={errors.nome}
+ *       value={field.value}
+ *       onChange={field.onChange}
+ *       onBlur={field.onBlur}
+ *       ref={field.ref}
+ *     />
+ *   )}
+ * />
+ * ```
+ */
 const CustomInput = React.forwardRef<HTMLInputElement, CustomInputProps>(
 	(
 		{
