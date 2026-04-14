@@ -12,8 +12,10 @@ export interface CustomButtonProps
 	extends Omit<ButtonHTMLAttributes<HTMLButtonElement>, 'title' | 'onClick'> {
 	title: ReactNode;
 	description?: ReactNode;
+	icon?: ReactNode;
 	onClick: MouseEventHandler<HTMLButtonElement>;
 	size?: 'sm' | 'md' | 'lg';
+	circle?: boolean;
 	isActive?: boolean;
 	backgroundColor?: string;
 	textColor?: string;
@@ -28,9 +30,11 @@ export interface CustomButtonProps
 export default function CustomButton({
 	title,
 	description,
+	icon,
 	onClick,
 	className,
 	size,
+	circle = false,
 	isActive = false,
 	backgroundColor,
 	textColor,
@@ -45,9 +49,15 @@ export default function CustomButton({
 	...rest
 }: CustomButtonProps) {
 	const sizeClasses = {
-		sm: 'px-4 py-1.5 rounded-xl',
-		md: 'px-6 py-2 rounded-2xl',
-		lg: 'px-7 py-3 rounded-2xl',
+		sm: 'px-4 py-1.5',
+		md: 'px-6 py-2',
+		lg: 'px-7 py-3',
+	} as const;
+
+	const sizeRadiusClasses = {
+		sm: 'rounded-xl',
+		md: 'rounded-2xl',
+		lg: 'rounded-2xl',
 	} as const;
 
 	const colorStyle = {
@@ -73,6 +83,7 @@ export default function CustomButton({
 				isActive ? 'navigatorButtonActive' : 'navigatorButtonInactive',
 				size ? 'w-auto self-start' : 'w-full',
 				size ? sizeClasses[size] : '',
+				circle ? 'rounded-full' : size ? sizeRadiusClasses[size] : '',
 				backgroundColor ? 'bg-(--custom-btn-bg)!' : '',
 				textColor ? 'text-(--custom-btn-text)!' : '',
 				hoverBackgroundColor ? 'hover:bg-(--custom-btn-hover-bg)!' : '',
@@ -84,26 +95,30 @@ export default function CustomButton({
 			style={mergedStyle}
 			{...rest}
 		>
-			<span className="flex min-w-0 flex-col items-start gap-0.5">
-				<span
-					className={cn(
-						'max-w-full truncate text-sm font-semibold text-current',
-						titleClassName
-					)}
-				>
-					{title}
-				</span>
+			<span className={cn('flex min-w-0 gap-2', description ? 'items-start' : 'items-center')}>
+				{icon ? <span className={cn('shrink-0 text-current', description ? 'mt-0.5' : '')}>{icon}</span> : null}
 
-				{description ? (
+				<span className="flex min-w-0 flex-col items-start gap-0.5">
 					<span
 						className={cn(
-							'line-clamp-2 max-w-full text-xs text-current opacity-85',
-							descriptionClassName
+							'max-w-full truncate text-sm font-semibold text-current',
+							titleClassName
 						)}
 					>
-						{description}
+						{title}
 					</span>
-				) : null}
+
+					{description ? (
+						<span
+							className={cn(
+								'line-clamp-2 max-w-full text-xs text-current opacity-85',
+								descriptionClassName
+							)}
+						>
+							{description}
+						</span>
+					) : null}
+				</span>
 			</span>
 		</button>
 	);

@@ -7,7 +7,7 @@ import { format, isValid, parse } from 'date-fns';
 import flatpickr from 'flatpickr';
 import 'flatpickr/dist/flatpickr.css';
 import { Portuguese } from 'flatpickr/dist/l10n/pt.js';
-import * as React from 'react';
+import {FocusEvent, ChangeEvent, ForwardedRef, forwardRef, InputHTMLAttributes, MutableRefObject, ReactNode, RefObject, useCallback, useEffect, useId, useMemo, useRef, useState } from 'react';
 import type { FieldError } from 'react-hook-form';
 
 type InputError = boolean | string | FieldError | null | undefined;
@@ -25,7 +25,7 @@ type DateValueChangeHandler = (value: string, date: Date | null) => void;
  */
 export interface CustomDateInputProps
 	extends Omit<
-		React.InputHTMLAttributes<HTMLInputElement>,
+		InputHTMLAttributes<HTMLInputElement>,
 		'type' | 'value' | 'defaultValue'
 	> {
 	/** Valor controlado do campo (string de data). */
@@ -33,11 +33,11 @@ export interface CustomDateInputProps
 	/** Valor inicial para modo nao controlado. */
 	defaultValue?: string;
 	/** Rotulo exibido acima do campo. */
-	label?: React.ReactNode;
+	label?: ReactNode;
 	/** Texto de apoio exibido abaixo quando nao ha erro. */
-	hint?: React.ReactNode;
+	hint?: ReactNode;
 	/** Texto auxiliar abaixo do campo (prioridade sobre `hint`). */
-	helperText?: React.ReactNode;
+	helperText?: ReactNode;
 	/** ID customizado para o texto de feedback (aria-describedby). */
 	helperId?: string;
 	/** Estado de erro (boolean, string ou FieldError do react-hook-form). */
@@ -53,9 +53,9 @@ export interface CustomDateInputProps
 	/** Classe para o texto de hint/helper/erro. */
 	hintClassName?: string;
 	/** Conteudo renderizado no lado esquerdo (icone, prefixo etc.). */
-	leftAdornment?: React.ReactNode;
+	leftAdornment?: ReactNode;
 	/** Conteudo renderizado no lado direito (icone, sufixo etc.). */
-	rightAdornment?: React.ReactNode;
+	rightAdornment?: ReactNode;
 	/** Formato visual aplicado no input. Ex.: `dd/MM/yyyy`. */
 	displayFormat?: string;
 	/** Formatos aceitos para parsing manual digitado pelo usuario. */
@@ -163,7 +163,7 @@ const resolveDisplayValue = (
 };
 
 const setForwardedRef = <T,>(
-	ref: React.ForwardedRef<T>,
+	ref: ForwardedRef<T>,
 	value: T | null
 ): void => {
 	if (typeof ref === 'function') {
@@ -172,7 +172,7 @@ const setForwardedRef = <T,>(
 	}
 
 	if (ref) {
-		(ref as React.MutableRefObject<T | null>).current = value;
+		(ref as RefObject<T | null>).current = value;
 	}
 };
 
@@ -217,7 +217,7 @@ const setForwardedRef = <T,>(
  * />
  * ```
  */
-const CustomDateInput = React.forwardRef<HTMLInputElement, CustomDateInputProps>(
+const CustomDateInput = forwardRef<HTMLInputElement, CustomDateInputProps>(
 	(
 		{
 			id,
@@ -258,25 +258,25 @@ const CustomDateInput = React.forwardRef<HTMLInputElement, CustomDateInputProps>
 		},
 		ref
 	) => {
-		const generatedId = React.useId();
+		const generatedId = useId();
 		const inputId = id ?? name ?? `custom-date-input-${generatedId}`;
 		const outputDateFormat = outputFormat ?? displayFormat;
 
-		const parseFormats = React.useMemo(() => {
+		const parseFormats = useMemo(() => {
 			return Array.from(
 				new Set([displayFormat, outputDateFormat, ...acceptedInputFormats])
 			);
 		}, [acceptedInputFormats, displayFormat, outputDateFormat]);
 
 		const isControlled = value !== undefined;
-		const controlledDisplayValue = React.useMemo(
+		const controlledDisplayValue = useMemo(
 			() =>
 				resolveDisplayValue(value ?? '', parseFormats, displayFormat),
 			[value, parseFormats, displayFormat]
 		);
 
 		const [uncontrolledDisplayValue, setUncontrolledDisplayValue] =
-			React.useState(() =>
+			useState(() =>
 				resolveDisplayValue(defaultValue ?? '', parseFormats, displayFormat)
 			);
 
@@ -284,8 +284,8 @@ const CustomDateInput = React.forwardRef<HTMLInputElement, CustomDateInputProps>
 			? controlledDisplayValue
 			: uncontrolledDisplayValue;
 
-		const inputRef = React.useRef<HTMLInputElement | null>(null);
-		const pickerRef = React.useRef<flatpickr.Instance | null>(null);
+		const inputRef = useRef<HTMLInputElement | null>(null);
+		const pickerRef = useRef<flatpickr.Instance | null>(null);
 
 		const errorMessage = getErrorMessage(error);
 		const isError = Boolean(error) && !disabled;
@@ -298,26 +298,26 @@ const CustomDateInput = React.forwardRef<HTMLInputElement, CustomDateInputProps>
 			.join(' ')
 			.trim();
 
-		const emitValueChange = React.useCallback(
+		const emitValueChange = useCallback(
 			(date: Date | null) => {
 				if (!onValueChange) {
 					return;
 				}
 
-				if (!date) {
-					onValueChange('', null);
+				const nextValue = date
+					? formatSafely(date, outputDateFormat, format(date, displayFormat))
+					: '';
+
+				if (isControlled && nextValue === (value ?? '')) {
 					return;
 				}
 
-				onValueChange(
-					formatSafely(date, outputDateFormat, format(date, displayFormat)),
-					date
-				);
+				onValueChange(nextValue, date);
 			},
-			[displayFormat, onValueChange, outputDateFormat]
+			[displayFormat, isControlled, onValueChange, outputDateFormat, value]
 		);
 
-		const commitParsedValue = React.useCallback(
+		const commitParsedValue = useCallback(
 			(date: Date, syncPicker = true) => {
 				const normalizedDate = normalizeDate(date);
 				const formattedDisplayValue = formatSafely(
@@ -339,7 +339,7 @@ const CustomDateInput = React.forwardRef<HTMLInputElement, CustomDateInputProps>
 			[displayFormat, emitValueChange, isControlled]
 		);
 
-		const handleInputChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+		const handleInputChange = (event: ChangeEvent<HTMLInputElement>) => {
 			const nextValue = event.target.value;
 
 			if (!isControlled) {
@@ -364,7 +364,7 @@ const CustomDateInput = React.forwardRef<HTMLInputElement, CustomDateInputProps>
 			commitParsedValue(parsedDate);
 		};
 
-		const handleInputBlur = (event: React.FocusEvent<HTMLInputElement>) => {
+		const handleInputBlur = (event: FocusEvent<HTMLInputElement>) => {
 			onBlur?.(event);
 
 			const trimmed = event.currentTarget.value.trim();
@@ -385,7 +385,7 @@ const CustomDateInput = React.forwardRef<HTMLInputElement, CustomDateInputProps>
 			commitParsedValue(parsedDate);
 		};
 
-		const handlePickerChange = React.useCallback(
+		const handlePickerChange = useCallback(
 			(selectedDates: Date[]) => {
 				const selectedDate = selectedDates[0] ?? null;
 				if (!selectedDate) {
@@ -401,7 +401,7 @@ const CustomDateInput = React.forwardRef<HTMLInputElement, CustomDateInputProps>
 			[commitParsedValue, emitValueChange, isControlled]
 		);
 
-		const positionPicker = React.useCallback(
+		const positionPicker = useCallback(
 			(instance: flatpickr.Instance) => {
 				const inputElement = inputRef.current;
 				const calendarElement = instance.calendarContainer;
@@ -447,7 +447,7 @@ const CustomDateInput = React.forwardRef<HTMLInputElement, CustomDateInputProps>
 			[]
 		);
 
-		React.useEffect(() => {
+		useEffect(() => {
 			const inputElement = inputRef.current;
 			if (!inputElement) {
 				return;
@@ -497,7 +497,7 @@ const CustomDateInput = React.forwardRef<HTMLInputElement, CustomDateInputProps>
 			showDatepicker,
 		]);
 
-		React.useEffect(() => {
+		useEffect(() => {
 			if (!pickerRef.current) {
 				return;
 			}
@@ -515,7 +515,7 @@ const CustomDateInput = React.forwardRef<HTMLInputElement, CustomDateInputProps>
 			pickerRef.current.setDate(parsedDate, false);
 		}, [displayValue, parseFormats]);
 
-		const assignInputRef = React.useCallback(
+		const assignInputRef = useCallback(
 			(node: HTMLInputElement | null) => {
 				inputRef.current = node;
 				setForwardedRef(ref, node);

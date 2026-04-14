@@ -1,19 +1,24 @@
 'use client';
 
+import { useMemo, useState } from 'react';
 import { zodResolver } from '@hookform/resolvers/zod';
 import CardContainer from '@/components/card/CardContainer';
 import CustomInput from '@/components/inputs/CustomInput';
 import PageTitle from '@/components/page/PageTitle';
-import Button from '@/components/ui/button/Button';
 import { formatCpfCnpj, validarCpfCnpj } from '@/utils/formatCpfCnpj';
 import { Controller, SubmitHandler, useForm } from 'react-hook-form';
 import { z } from 'zod';
 import CustomTextbox from '@/components/inputs/CustomTextbox';
 import CustomSelect from '@/components/inputs/CustomSelect';
 import CustomDateInput from '@/components/inputs/CustomDateInput';
-import CustomSearch from '@/components/inputs/CustomSearch';
-import CustomSelectGrid from '@/components/inputs/CustomSelectGrid';
+import CustomSelectData from '@/components/inputs/CustomSelectData';
 import CustomButton from '@/components/buttons/CustomButton';
+import CustomSelectGrid, {
+  SelectGridValue,
+} from '@/components/inputs/CustomSelectGrid';
+import { CloseLineIcon } from '@/icons';
+import { CurrencyDollarIcon } from '@heroicons/react/16/solid';
+import { currencyMask, getNumericValue } from '@/utils/masks/monetaryMask';
 
 const onlyDigits = (value: string): string => value.replace(/\D/g, '');
 
@@ -71,6 +76,92 @@ const formatHourWithColon = (value: string): string => {
   return `${digits.slice(0, 2)}:${digits.slice(2, 4)}`;
 };
 
+const normalizeSearchText = (value: string): string =>
+  value
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .trim();
+
+const tipoEntradaOptions = [
+  { value: 'opcao1', label: 'Opção 1' },
+  { value: 'opcao2', label: 'Opção 2' },
+  { value: 'opcao3', label: 'Opção 3' },
+];
+
+const naturezaOptions = [
+  { value: 'Registro', label: 'REGISTRO' },
+  { value: 'Notificação', label: 'NOTIFICACAO' },
+  { value: 'DUT', label: 'DUT' },
+  { value: 'Certidão', label: 'CERTIDAO' },
+  { value: 'Averbação', label: 'AVERBACAO' },
+  { value: 'Matrícula', label: 'MATRICULA' },
+];
+
+const tipoCobrancaOptions = [
+  { value: 'opcao1', label: 'Opção 1' },
+  { value: 'opcao2', label: 'Opção 2' },
+  { value: 'opcao3', label: 'Opção 3' },
+];
+
+const servicosOptions = [
+  {
+    value: '1',
+    label: 'Registro de Título, Documento ou Papel com Valor Declarado',
+    description: 'Código 6000',
+  },
+  {
+    value: '2',
+    label: 'Registro de mídia de documentos digitalizados ou nato-digitais até 5 gb',
+    description: 'Código 7000',
+  },
+  {
+    value: '3',
+    label: 'Tabelionato de Protestos',
+    description: 'Código 8000',
+  },
+  {
+    value: '4',
+    label: 'Registro Civil de Pessoas Naturais',
+    description: 'Código 9000',
+  },
+  {
+    value: '5',
+    label: 'Registro Civil de Pessoas Jurídicas',
+    description: 'Código 10000',
+  },
+  {
+    value: '6',
+    label: 'Registro de Títulos e Documentos',
+    description: 'Código 11000',
+  },
+  {
+    value: '7',
+    label: 'Registro de Distribuição',
+    description: 'Código 12000',
+  },
+  {
+    value: '8',
+    label: 'Registro de Imóveis Rurais',
+    description: 'Código 13000',
+  },
+  {
+    value: '9',
+    label: 'Registro de Imóveis Urbanos',
+    description: 'Código 14000',
+  },
+  {
+    value: '10',
+    label: 'Registro de Imóveis Especiais',
+    description: 'Código 15000',
+  },
+];
+
+const requiredSelectSchema = z
+  .union([z.string(), z.number()])
+  .nullable()
+  .refine((value) => value !== null, 'Selecione uma opção.');
+
 const balcaoFormSchema = z.object({
   documento: z
     .string()
@@ -117,17 +208,46 @@ const balcaoFormSchema = z.object({
       (value) => value === '' || /^([01]\d|2[0-3]):([0-5]\d)$/.test(value),
       'Horário de urgência deve estar no formato HH:mm.'
     ),
+  tipoEntrada: requiredSelectSchema,
+  natureza: requiredSelectSchema,
+  tipoCobranca: requiredSelectSchema,
+  ato: z.object({
+    valorDocumento: z
+      .string()
+      .min(1, 'Informe o valor do documento.'),
+    protocolo: z
+      .string()
+      .min(1, 'Informe o protocolo.')
+      .refine(
+        (value) => onlyDigits(value).length > 0,
+        'Informe um protocolo válido.'
+      ),
+    dataEntrada: z
+      .string()
+      .trim()
+      .min(1, 'Informe a data da entrada.')
+      .regex(/^\d{2}\/\d{2}\/\d{4}$/, 'Data da entrada deve estar no formato DD/MM/AAAA.'),
+    servicos: z
+      .array(z.union([z.string(), z.number()]))
+      .min(1, 'Selecione ao menos 1 serviço.'),
+    quantidade: z.number().int().min(0, 'Quantidade não pode ser negativa.'),
+    nomes: z.number().int().min(0, 'Nomes não pode ser negativo.'),
+    paginas: z.number().int().min(0, 'Páginas não pode ser negativo.'),
+    vias: z.number().int().min(0, 'Vias não pode ser negativo.'),
+    diligencias: z.number().int().min(0, 'Diligências não pode ser negativa.'),
+  }),
 });
 
-type FormValues = z.infer<typeof balcaoFormSchema>;
+type FormInputValues = z.input<typeof balcaoFormSchema>;
+type FormValues = z.output<typeof balcaoFormSchema>;
 
 export default function BalcaoPage() {
   const {
     control,
     handleSubmit,
     watch,
-    formState: { errors, isSubmitting },
-  } = useForm<FormValues>({
+    formState: { errors },
+  } = useForm<FormInputValues, unknown, FormValues>({
     // Zod concentra as regras de validação e saneamento final antes do submit.
     resolver: zodResolver(balcaoFormSchema),
     defaultValues: {
@@ -137,6 +257,20 @@ export default function BalcaoPage() {
       email: '',
       observacao: '',
       horarioUrgencia: '',
+      tipoEntrada: null,
+      natureza: null,
+      tipoCobranca: null,
+      ato: {
+        valorDocumento: currencyMask('0'),
+        protocolo: '',
+        dataEntrada: '',
+        servicos: [],
+        quantidade: 1,
+        nomes: 0,
+        paginas: 0,
+        vias: 0,
+        diligencias: 0,
+      },
     },
     // Primeira validação ao tocar/sair do campo e, depois disso, revalida em cada mudança.
     mode: 'onTouched',
@@ -145,11 +279,39 @@ export default function BalcaoPage() {
   });
 
   const onSubmit: SubmitHandler<FormValues> = (data) => {
-    console.log(data);
+    const payload = {
+      ...data,
+      ato: {
+        ...data.ato,
+        valorDocumentoNumerico: getNumericValue(data.ato.valorDocumento),
+      },
+    };
+
+    console.log(payload);
   };
 
   const documentoDigitsLength = watch('documento').length;
   const contatoDigitsLength = watch('contato').length;
+
+  const [servicosSearchTerm, setServicosSearchTerm] = useState('');
+  const [selectedIds, setSelectedIds] = useState<SelectGridValue[]>([]);
+
+  const filteredServicosOptions = useMemo(() => {
+    const normalizedTerm = normalizeSearchText(servicosSearchTerm);
+
+    if (!normalizedTerm) {
+      return servicosOptions;
+    }
+
+    return servicosOptions.filter((item) => {
+      const searchableText = normalizeSearchText(
+        `${item.label} ${item.description ?? ''}`
+      );
+
+      return searchableText.includes(normalizedTerm);
+    });
+  }, [servicosSearchTerm]);
+
   return (
     <PageTitle title="Balcão" description="Gerencie lançamentos de balcão">
       {/* Formulário de apresentantes */}
@@ -173,6 +335,7 @@ export default function BalcaoPage() {
             onClick={() => {}}
           />
         </div>
+
         {/* Apresentante */}
         <CardContainer
           title="Apresentante"
@@ -186,14 +349,14 @@ export default function BalcaoPage() {
             - o estado do formulário guarda valores normalizados (ex.: só dígitos).
             Com register simples, ficaria mais difícil sincronizar exibição e valor persistido.
           */}
-          <div className="grid grid-cols-1 gap-4 lg:grid-cols-2 xl:grid-cols-3">
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
             {/* Documento */}
             <Controller
               name="documento"
               control={control}
               render={({ field }) => (
                 <CustomInput
-                  label="Documento CPF/CNPJ"
+                  label="Documento"
                   placeholder="123.456.789-10"
                   autoComplete="off"
                   maxLength={18}
@@ -216,32 +379,36 @@ export default function BalcaoPage() {
             />
 
             {/* Nome */}
-            <Controller
-              name="nome"
-              control={control}
-              render={({ field }) => (
-                <CustomInput
-                  label="Nome"
-                  placeholder="Nome do Apresentante"
-                  autoComplete="off"
-                  spellCheck={false}
-                  maxLength={150}
-                  error={errors.nome}
-                  name={field.name}
-                  // Mostra nome normalizado em tempo real, inclusive com iniciais maiúsculas.
-                  value={normalizeNameForDisplay(field.value)}
-                  onBlur={() => {
-                    // Ao sair do campo, aplica a normalização final usada também no Zod.
-                    field.onChange(normalizeNameForSubmit(field.value));
-                    field.onBlur();
-                  }}
-                  onChange={(event: React.ChangeEvent<HTMLInputElement>) => {
-                    field.onChange(normalizeNameForDisplay(event.target.value));
-                  }}
-                  ref={field.ref}
-                />
-              )}
-            />
+            <div className="col-span-1 grid xl:col-span-2">
+              <Controller
+                name="nome"
+                control={control}
+                render={({ field }) => (
+                  <CustomInput
+                    label="Nome"
+                    placeholder="Nome do Apresentante"
+                    autoComplete="off"
+                    spellCheck={false}
+                    maxLength={150}
+                    error={errors.nome}
+                    name={field.name}
+                    // Mostra nome normalizado em tempo real, inclusive com iniciais maiúsculas.
+                    value={normalizeNameForDisplay(field.value)}
+                    onBlur={() => {
+                      // Ao sair do campo, aplica a normalização final usada também no Zod.
+                      field.onChange(normalizeNameForSubmit(field.value));
+                      field.onBlur();
+                    }}
+                    onChange={(event: React.ChangeEvent<HTMLInputElement>) => {
+                      field.onChange(
+                        normalizeNameForDisplay(event.target.value)
+                      );
+                    }}
+                    ref={field.ref}
+                  />
+                )}
+              />
+            </div>
 
             {/* Contato */}
             <Controller
@@ -271,58 +438,69 @@ export default function BalcaoPage() {
               )}
             />
 
-            {/* Email */}
-            <Controller
-              name="email"
-              control={control}
-              render={({ field }) => (
-                <CustomInput
-                  label="Email"
-                  placeholder="apresentante@apresentante.com.br"
-                  type="email"
-                  inputMode="email"
-                  autoComplete="email"
-                  spellCheck={false}
-                  maxLength={320}
-                  error={errors.email}
-                  name={field.name}
-                  value={field.value}
-                  onBlur={field.onBlur}
-                  onChange={(event: React.ChangeEvent<HTMLInputElement>) => {
-                    field.onChange(event.target.value);
-                  }}
-                  ref={field.ref}
+            <div className="contents xl:col-span-2 xl:grid xl:grid-cols-[minmax(0,1fr)_10rem] xl:gap-4">
+              {/* Email */}
+              <div className="min-w-0">
+                <Controller
+                  name="email"
+                  control={control}
+                  render={({ field }) => (
+                    <CustomInput
+                      label="Email"
+                      placeholder="apresentante@apresentante.com.br"
+                      type="email"
+                      inputMode="email"
+                      autoComplete="email"
+                      spellCheck={false}
+                      maxLength={320}
+                      error={errors.email}
+                      name={field.name}
+                      value={field.value}
+                      onBlur={field.onBlur}
+                      onChange={(
+                        event: React.ChangeEvent<HTMLInputElement>
+                      ) => {
+                        field.onChange(event.target.value);
+                      }}
+                      ref={field.ref}
+                      className="w-full"
+                    />
+                  )}
                 />
-              )}
-            />
+              </div>
 
-            {/* Horario de Urgencia */}
-            <Controller
-              name="horarioUrgencia"
-              control={control}
-              render={({ field }) => (
-                <CustomInput
-                  label="Horário de Urgência"
-                  placeholder="HH:mm"
-                  autoComplete="off"
-                  spellCheck={false}
-                  inputMode="numeric"
-                  maxLength={5}
-                  error={errors.horarioUrgencia}
-                  name={field.name}
-                  value={formatHourWithColon(field.value)}
-                  onBlur={() => {
-                    field.onChange(formatHourWithColon(field.value));
-                    field.onBlur();
-                  }}
-                  onChange={(event: React.ChangeEvent<HTMLInputElement>) => {
-                    field.onChange(formatHourWithColon(event.target.value));
-                  }}
-                  ref={field.ref}
-                  className="max-w-50"
+              {/* Horario de Urgencia */}
+              <div className="xl:justify-self-end">
+                <Controller
+                  name="horarioUrgencia"
+                  control={control}
+                  render={({ field }) => (
+                    <CustomInput
+                      label="Horário de Urgência"
+                      placeholder="HH:mm"
+                      autoComplete="off"
+                      spellCheck={false}
+                      inputMode="numeric"
+                      maxLength={5}
+                      error={errors.horarioUrgencia}
+                      name={field.name}
+                      value={formatHourWithColon(field.value)}
+                      onBlur={() => {
+                        field.onChange(formatHourWithColon(field.value));
+                        field.onBlur();
+                      }}
+                      onChange={(
+                        event: React.ChangeEvent<HTMLInputElement>
+                      ) => {
+                        field.onChange(formatHourWithColon(event.target.value));
+                      }}
+                      ref={field.ref}
+                      className="max-w-40"
+                    />
+                  )}
                 />
-              )}
-            />
+              </div>
+            </div>
           </div>
 
           {/* Observações */}
@@ -354,39 +532,58 @@ export default function BalcaoPage() {
         <CardContainer columns={1}>
           <div className="grid grid-cols-1 gap-4 lg:grid-cols-2 xl:grid-cols-3">
             {/* Naturezas */}
-            <CustomSelect
-              label="Naturezas"
-              options={[
-                { value: 'Registro', label: 'REGISTRO' },
-                { value: 'Notificação', label: 'NOTIFICACAO' },
-                { value: 'DUT', label: 'DUT' },
-                { value: 'Certidão', label: 'CERTIDAO' },
-                { value: 'Averbação', label: 'AVERBACAO' },
-                { value: 'Matrícula', label: 'MATRICULA' },
-              ]}
-              placeholder="Selecione uma opção"
-            />
 
             {/* Tipo de entradas */}
-            <CustomSelect
-              label="Tipo de entradas"
-              options={[
-                { value: 'opcao1', label: 'Opção 1' },
-                { value: 'opcao2', label: 'Opção 2' },
-                { value: 'opcao3', label: 'Opção 3' },
-              ]}
-              placeholder="Selecione uma opção"
+            <Controller
+              name="tipoEntrada"
+              control={control}
+              render={({ field }) => (
+                <CustomSelect
+                  label="Tipo de entradas"
+                  options={tipoEntradaOptions}
+                  placeholder="Selecione uma opção"
+                  error={errors.tipoEntrada}
+                  value={field.value}
+                  onChange={field.onChange}
+                  onBlur={field.onBlur}
+                  name={field.name}
+                />
+              )}
+            />
+
+            <Controller
+              name="natureza"
+              control={control}
+              render={({ field }) => (
+                <CustomSelect
+                  label="Naturezas"
+                  options={naturezaOptions}
+                  placeholder="Selecione uma opção"
+                  error={errors.natureza}
+                  value={field.value}
+                  onChange={field.onChange}
+                  onBlur={field.onBlur}
+                  name={field.name}
+                />
+              )}
             />
 
             {/* Tipos de cobrança */}
-            <CustomSelect
-              label="Tipo de cobrança"
-              options={[
-                { value: 'opcao1', label: 'Opção 1' },
-                { value: 'opcao2', label: 'Opção 2' },
-                { value: 'opcao3', label: 'Opção 3' },
-              ]}
-              placeholder="Selecione uma opção"
+            <Controller
+              name="tipoCobranca"
+              control={control}
+              render={({ field }) => (
+                <CustomSelect
+                  label="Tipo de cobrança"
+                  options={tipoCobrancaOptions}
+                  placeholder="Selecione uma opção"
+                  error={errors.tipoCobranca}
+                  value={field.value}
+                  onChange={field.onChange}
+                  onBlur={field.onBlur}
+                  name={field.name}
+                />
+              )}
             />
           </div>
         </CardContainer>
@@ -400,135 +597,220 @@ export default function BalcaoPage() {
         >
           <div className="grid grid-cols-1 gap-4 lg:grid-cols-2 xl:grid-cols-3">
             {/* Valor */}
-            <CustomInput
-              label="Valor"
-              placeholder="Digite o valor do ato"
-              autoComplete="off"
-              type="number"
+            <Controller
+              name="ato.valorDocumento"
+              control={control}
+              render={({ field }) => (
+                <CustomInput
+                  label="Valor do documento"
+                  placeholder="Digite o valor do ato"
+                  autoComplete="off"
+                  inputMode="numeric"
+                  maxLength={20}
+                  leftAdornment={<CurrencyDollarIcon className="size-4" />}
+                  error={errors.ato?.valorDocumento}
+                  name={field.name}
+                  value={field.value}
+                  onBlur={field.onBlur}
+                  onChange={(event: React.ChangeEvent<HTMLInputElement>) => {
+                    field.onChange(currencyMask(event.target.value));
+                  }}
+                  ref={field.ref}
+                />
+              )}
             />
 
             {/* Protocolo */}
-            <CustomInput
-              label="Protocolo"
-              placeholder="Digite o protocolo"
-              autoComplete="off"
-              type="number"
+            <Controller
+              name="ato.protocolo"
+              control={control}
+              render={({ field }) => (
+                <CustomInput
+                  label="Protocolo"
+                  placeholder="Digite o protocolo"
+                  autoComplete="off"
+                  inputMode="numeric"
+                  maxLength={30}
+                  error={errors.ato?.protocolo}
+                  name={field.name}
+                  value={field.value}
+                  onBlur={field.onBlur}
+                  onChange={(event: React.ChangeEvent<HTMLInputElement>) => {
+                    field.onChange(onlyDigits(event.target.value));
+                  }}
+                  ref={field.ref}
+                />
+              )}
             />
 
             {/* Data da entrada */}
-            <CustomDateInput
-              label="Data da Entrada"
-              placeholder="DD/MM/AAAA"
-              autoComplete="off"
-              showDatepicker={true}
+            <Controller
+              name="ato.dataEntrada"
+              control={control}
+              render={({ field }) => (
+                <CustomDateInput
+                  label="Data da Entrada"
+                  placeholder="DD/MM/AAAA"
+                  autoComplete="off"
+                  showDatepicker={true}
+                  error={errors.ato?.dataEntrada}
+                  name={field.name}
+                  value={field.value}
+                  onValueChange={(nextValue) => {
+                    if (nextValue !== field.value) {
+                      field.onChange(nextValue);
+                    }
+                  }}
+                  onBlur={field.onBlur}
+                  ref={field.ref}
+                />
+              )}
             />
           </div>
 
           <CustomInput
             label="Pesquisar"
             placeholder="Digite a descrição ou código"
+            autoComplete="off"
+            value={servicosSearchTerm}
+            onChange={(event: React.ChangeEvent<HTMLInputElement>) => {
+              setServicosSearchTerm(event.target.value);
+            }}
           />
 
-          <CustomSelectGrid
-            className="max-h-60 overflow-auto sm:grid-cols-1 md:grid-cols-2"
-            label="Serviços"
-            maxSelected={1}
-            items={[
-              {
-                value: '1',
-                label:
-                  'Registro de Título, Documento ou Papel com Valor Declarado',
-                description: 'Código 6000',
-              },
-              {
-                value: '2',
-                label:
-                  'Registro de mídia de documentos digitalizados ou nato-digitais até 5 gb',
-                description: 'Código 7000',
-              },
-              {
-                value: '3',
-                label: 'Tabelionato de Protestos',
-                description: 'Código 8000',
-              },
-              {
-                value: '4',
-                label: 'Registro Civil de Pessoas Naturais',
-                description: 'Código 9000',
-              },
-              {
-                value: '5',
-                label: 'Registro Civil de Pessoas Jurídicas',
-                description: 'Código 10000',
-              },
-              {
-                value: '6',
-                label: 'Registro de Títulos e Documentos',
-                description: 'Código 11000',
-              },
-              {
-                value: '7',
-                label: 'Registro de Distribuição',
-                description: 'Código 12000',
-              },
-              {
-                value: '8',
-                label: 'Registro de Imóveis Rurais',
-                description: 'Código 13000',
-              },
-              {
-                value: '9',
-                label: 'Registro de Imóveis Urbanos',
-                description: 'Código 14000',
-              },
-              {
-                value: '10',
-                label: 'Registro de Imóveis Especiais',
-                description: 'Código 15000',
-              },
-            ]}
+          <Controller
+            name="ato.servicos"
+            control={control}
+            render={({ field }) => (
+              <CustomSelectData
+                className="custom-scrollbar max-h-60 min-h-60 overflow-auto sm:grid-cols-1 md:grid-cols-2"
+                label="Serviços"
+                maxSelected={1}
+                items={filteredServicosOptions}
+                error={errors.ato?.servicos?.message}
+                value={field.value}
+                onChange={field.onChange}
+                onBlur={field.onBlur}
+                ref={field.ref}
+              />
+            )}
           />
 
           {/* Configurações do ato */}
           <div className="mb-6 grid grid-cols-2 gap-4 lg:grid-cols-3 xl:grid-cols-5">
-            <CustomInput
-              label="Quantidade"
-              placeholder="0"
-              autoComplete="off"
-              type="number"
-              defaultValue={1}
+            <Controller
+              name="ato.quantidade"
+              control={control}
+              render={({ field }) => (
+                <CustomInput
+                  label="Quantidade"
+                  placeholder="0"
+                  autoComplete="off"
+                  type="number"
+                  min={0}
+                  error={errors.ato?.quantidade}
+                  name={field.name}
+                  value={field.value}
+                  onBlur={field.onBlur}
+                  onChange={(event: React.ChangeEvent<HTMLInputElement>) => {
+                    const nextValue = Number(onlyDigits(event.target.value));
+                    field.onChange(Number.isNaN(nextValue) ? 0 : nextValue);
+                  }}
+                  ref={field.ref}
+                />
+              )}
             />
 
-            <CustomInput
-              label="Nomes"
-              placeholder="0"
-              autoComplete="off"
-              type="number"
-              defaultValue={0}
+            <Controller
+              name="ato.nomes"
+              control={control}
+              render={({ field }) => (
+                <CustomInput
+                  label="Nomes"
+                  placeholder="0"
+                  autoComplete="off"
+                  type="number"
+                  min={0}
+                  error={errors.ato?.nomes}
+                  name={field.name}
+                  value={field.value}
+                  onBlur={field.onBlur}
+                  onChange={(event: React.ChangeEvent<HTMLInputElement>) => {
+                    const nextValue = Number(onlyDigits(event.target.value));
+                    field.onChange(Number.isNaN(nextValue) ? 0 : nextValue);
+                  }}
+                  ref={field.ref}
+                />
+              )}
             />
 
-            <CustomInput
-              label="Páginas"
-              placeholder="0"
-              autoComplete="off"
-              type="number"
-              defaultValue={0}
+            <Controller
+              name="ato.paginas"
+              control={control}
+              render={({ field }) => (
+                <CustomInput
+                  label="Páginas"
+                  placeholder="0"
+                  autoComplete="off"
+                  type="number"
+                  min={0}
+                  error={errors.ato?.paginas}
+                  name={field.name}
+                  value={field.value}
+                  onBlur={field.onBlur}
+                  onChange={(event: React.ChangeEvent<HTMLInputElement>) => {
+                    const nextValue = Number(onlyDigits(event.target.value));
+                    field.onChange(Number.isNaN(nextValue) ? 0 : nextValue);
+                  }}
+                  ref={field.ref}
+                />
+              )}
             />
 
-            <CustomInput
-              label="Vias"
-              placeholder="0"
-              autoComplete="off"
-              type="number"
-              defaultValue={0}
+            <Controller
+              name="ato.vias"
+              control={control}
+              render={({ field }) => (
+                <CustomInput
+                  label="Vias"
+                  placeholder="0"
+                  autoComplete="off"
+                  type="number"
+                  min={0}
+                  error={errors.ato?.vias}
+                  name={field.name}
+                  value={field.value}
+                  onBlur={field.onBlur}
+                  onChange={(event: React.ChangeEvent<HTMLInputElement>) => {
+                    const nextValue = Number(onlyDigits(event.target.value));
+                    field.onChange(Number.isNaN(nextValue) ? 0 : nextValue);
+                  }}
+                  ref={field.ref}
+                />
+              )}
             />
 
-            <CustomInput
-              label="Diligências"
-              placeholder="0"
-              autoComplete="off"
-              type="number"
-              defaultValue={0}
+            <Controller
+              name="ato.diligencias"
+              control={control}
+              render={({ field }) => (
+                <CustomInput
+                  label="Diligências"
+                  placeholder="0"
+                  autoComplete="off"
+                  type="number"
+                  min={0}
+                  error={errors.ato?.diligencias}
+                  name={field.name}
+                  value={field.value}
+                  onBlur={field.onBlur}
+                  onChange={(event: React.ChangeEvent<HTMLInputElement>) => {
+                    const nextValue = Number(onlyDigits(event.target.value));
+                    field.onChange(Number.isNaN(nextValue) ? 0 : nextValue);
+                  }}
+                  ref={field.ref}
+                />
+              )}
             />
           </div>
 
@@ -550,6 +832,57 @@ export default function BalcaoPage() {
           collapsible={true}
           columns={1}
         >
+          <div className="flex justify-end gap-4 mb-2">
+            <CustomButton
+              circle={true}
+              size="lg"
+              title="Limpar"
+              icon={<CloseLineIcon className="size-5" />}
+              aria-label="Fechar descrição"
+              onClick={() => console.log('Gerar descrição automática')}
+            />
+
+            <CustomButton
+              circle={true}
+              size="lg"
+              icon={<CurrencyDollarIcon className="size-5" />}
+              title="Custas"
+              onClick={() => console.log('Gerar descrição automática')}
+            />
+          </div>
+          <CustomSelectGrid
+            maxSelected={1}
+            maxHeightClassName="max-h-80 min-h-80"
+            scrollViewportClassName="custom-scrollbar"
+            // roundedClassName="rounded-xl"
+            rows={[
+              { id: 1, codigo: '6000', descricao: 'Registro de Titulo' },
+              { id: 2, codigo: '7000', descricao: 'Registro de Midia' },
+              { id: 3, codigo: '8000', descricao: 'Registro de Imóveis' },
+              { id: 4, codigo: '9000', descricao: 'Registro Civil de Pessoas Naturais' },
+              { id: 5, codigo: '10000', descricao: 'Registro de Contratos' },
+              { id: 6, codigo: '11000', descricao: 'Registro de Distribuição' },
+              { id: 7, codigo: '12000', descricao: 'Registro de Imóveis Rurais' },
+              { id: 8, codigo: '13000', descricao: 'Registro de Imóveis Urbanos' },
+              { id: 9, codigo: '14000', descricao: 'Registro de Imóveis Especiais' },
+              { id: 10, codigo: '15000', descricao: 'Registro de Títulos e Documentos' },
+              { id: 11, codigo: '16000', descricao: 'Registro de Protestos' },
+            ]}
+            columns={[
+              {
+                key: 'codigo',
+                header: 'Codigo',
+                sortable: true,
+                widthClassName: 'w-28',
+              },
+              { key: 'descricao', header: 'Descricao', sortable: true },
+            ]}
+            selectionMode="multiple"
+            rowIdKey="id"
+            value={selectedIds}
+            onChange={(values) => setSelectedIds(values)}
+          />
+
           <div className="flex justify-end">
             <CustomButton
               size="lg"
@@ -557,16 +890,6 @@ export default function BalcaoPage() {
               title="Finalizar"
               onClick={() => console.log('Valores do formulario: ', watch())}
             />
-
-            {/* <Button
-            type="submit"
-            size="sm"
-            loading={isSubmitting}
-            className="bg-(--central-azul) text-(--texto-button) hover:opacity-90"
-            onClick={() => console.log('Valores do formulario: ', watch())}
-          >
-            Salvar
-          </Button> */}
           </div>
         </CardContainer>
 

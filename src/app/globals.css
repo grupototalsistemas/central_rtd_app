@@ -428,16 +428,23 @@
 }
 
 @utility custom-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: var(--cor-borda) transparent;
+
+  .dark & {
+    scrollbar-color: var(--dark-cor-borda) transparent;
+  }
+
   &::-webkit-scrollbar {
     @apply size-2;
   }
 
   &::-webkit-scrollbar-track {
-    @apply rounded-full;
+    @apply rounded-full bg-transparent;
   }
 
   &::-webkit-scrollbar-thumb {
-    @apply rounded-full bg-gray-400 dark:bg-gray-700;
+    @apply rounded-full bg-(--cor-borda) transition-colors hover:bg-(--cor-button-hover) dark:bg-(--dark-cor-borda) dark:hover:bg-(--dark-cor-button-hover);
   }
 }
 
@@ -491,10 +498,6 @@
 }
 @utility notification-item-read {
   @apply bg-(--cor-card) opacity-75 hover:opacity-100 dark:bg-(--dark-foreground);
-}
-
-.dark .custom-scrollbar::-webkit-scrollbar-thumb {
-  background-color: #344054;
 }
 
 @layer utilities {

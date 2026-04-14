@@ -1,7 +1,7 @@
-# Instrucoes de Estilo para IA - Central RTD
+# Instrucoes de Estilo e Engenharia para IA - Central RTD
 
 ## Objetivo
-Garantir que toda alteracao visual siga os estilos existentes do projeto, reutilizando os tokens e utilitarios definidos em src/app/globals.css.
+Garantir que toda alteracao visual siga os estilos existentes do projeto, reutilizando os tokens e utilitarios definidos em src/app/globals.css, e que o codigo gerado seja performatico, limpo, moderno e facil de ler/manter.
 
 ## Fonte de verdade
 - Tema, cores, tipografia, breakpoints e utilitarios customizados: src/app/globals.css
@@ -13,6 +13,8 @@ Garantir que toda alteracao visual siga os estilos existentes do projeto, reutil
 - Reutilizar tokens CSS ja definidos em @theme antes de usar cor fixa.
 - Manter suporte completo a modo claro e modo escuro.
 - Evitar regressao de contraste em textos e icones.
+- Priorizar solucoes simples, previsiveis e de facil manutencao.
+- Evitar complexidade acidental e over-engineering.
 
 ## Tema de cor
 - Primaria da marca: --central-azul (#004A96)
@@ -60,11 +62,52 @@ Sempre priorizar estes utilitarios quando o contexto combinar:
 - Em componentes TSX, manter o padrao local do arquivo e evitar refatoracao ampla sem necessidade.
 - Compatibilidade v3: aceitar classes legadas somente quando ja existirem no trecho editado; em codigo novo, preferir o padrao atual do projeto.
 
+## Performance e otimizacao
+- Priorizar estruturas de dados e fluxos simples com boa complexidade (evitar custo quadratico sem necessidade).
+- Evitar re-renders desnecessarios em React; revisar props, estado local e levantamento de estado.
+- Usar useMemo/useCallback apenas quando houver ganho real (calculo custoso ou referencia estavel para componente memoizado).
+- Em useEffect, declarar dependencias corretamente e limpar efeitos quando necessario.
+- Em listas, usar key estavel (id); nao usar index quando a lista puder mudar de ordem.
+- Carregar partes pesadas sob demanda (dynamic import/lazy loading) quando fizer sentido.
+- Evitar imports amplos de bibliotecas; preferir imports especificos.
+
+## Clean code e manutenibilidade
+- Usar nomes descritivos e orientados a intencao (funcoes com verbo, variaveis claras).
+- Manter funcoes/componentes coesos, com responsabilidade unica e baixo acoplamento.
+- Extrair logica repetida para helper, utilitario ou hook reutilizavel.
+- Evitar magic numbers e magic strings; mover para constantes nomeadas.
+- Preferir early return para reduzir aninhamento e facilitar leitura.
+- Manter mudancas pequenas e focadas no requisito, sem refatoracao ampla desnecessaria.
+
+## Praticas modernas (TypeScript, React e Next.js)
+- Tipar props, retornos e contratos publicos de funcoes.
+- Evitar any; quando necessario, usar unknown com narrowing explicito.
+- Usar unioes discriminadas e type guards em estados complexos.
+- Em React/Next.js, preferir composicao de componentes em vez de componentes monoliticos.
+- Em App Router, manter separacao clara entre responsabilidades de server e client components.
+- Evitar criar API paralela de estilos/comportamentos quando ja existe padrao no projeto.
+
+## Async, erros e robustez
+- Tratar erros de chamadas assicronas com try/catch e retornos consistentes.
+- Nunca deixar Promise sem tratamento de erro.
+- Representar estados de carregamento, sucesso e erro de forma explicita na UI.
+- Em efeitos assicronos, prevenir condicoes de corrida e vazamento de estado com cleanup.
+- Validar dados externos antes de uso e falhar de forma segura quando o contrato vier invalido.
+
+## Legibilidade e compreensao humana
+- Organizar arquivos de forma previsivel: imports, tipos, constantes, componente, helpers e export.
+- Priorizar blocos curtos, pouco aninhamento e fluxo linear.
+- Preferir codigo autoexplicativo; usar comentarios apenas para contexto nao obvio.
+- Escrever comentarios curtos e objetivos, descrevendo intencao e trade-off quando necessario.
+- Preservar consistencia de estilo no arquivo editado para facilitar revisao de PR.
+
 ## Evitar
 - Nao introduzir nova paleta paralela sem token em @theme.
 - Nao usar variaveis CSS inexistentes.
 - Nao trocar utilitarios globais por classes ad-hoc sem necessidade funcional.
 - Nao fixar cor de icone em vermelho/azul/amarelo via hex direto quando houver token equivalente.
+- Nao introduzir abstracoes genericas sem necessidade comprovada.
+- Nao otimizar prematuramente sem indicio real de gargalo.
 
 ## Checklist antes de finalizar
 - Mudanca visual usa tokens existentes?
@@ -74,3 +117,9 @@ Sempre priorizar estes utilitarios quando o contexto combinar:
 - Em formularios, o feedback visual principal de input esta em ring (e nao em sombra), salvo pedido explicito?
 - SVG segue currentColor?
 - Nao foram criadas variaveis novas sem necessidade?
+- O codigo evita re-render desnecessario e custo excessivo?
+- Existe repeticao que deveria ser extraida para helper/hook?
+- Tipos estao claros (sem any desnecessario) e contratos estao explicitos?
+- Fluxos async tratam erro, loading e cleanup corretamente?
+- A leitura esta simples para humanos (nomes bons, baixo aninhamento, intencao clara)?
+- Lint, typecheck e testes relevantes foram considerados antes de concluir?

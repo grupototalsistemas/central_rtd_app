@@ -91,7 +91,7 @@ export default function CardContainer({
         className={cn(
           canCollapse &&
             'overflow-hidden transition-[max-height,opacity] duration-300 ease-in-out',
-          canCollapse && !isExpanded && 'invisible pointer-events-none opacity-0',
+          canCollapse && !isExpanded && 'pointer-events-none opacity-0',
         )}
         aria-hidden={canCollapse ? !isExpanded : undefined}
         style={

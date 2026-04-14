@@ -25,7 +25,7 @@ export default function RootLayout({
   return (
     <html lang="pt-BR">
       <body
-        className="overflow-x-hidden dark:bg-gray-900"
+        className="overflow-x-hidden"
         suppressHydrationWarning
       >
         <ReduxProvider>
