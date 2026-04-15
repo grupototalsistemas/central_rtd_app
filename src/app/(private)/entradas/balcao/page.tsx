@@ -589,13 +589,17 @@ export default function BalcaoPage() {
   const custasTotal = useMemo(
     () =>
       Object.values(custasValues).reduce(
-        (accumulator, currentValue) => accumulator + getNumericValue(currentValue),
+        (accumulator, currentValue) =>
+          accumulator + getNumericValue(currentValue),
         0
       ),
     [custasValues]
   );
 
-  const handleCustasFieldChange = (fieldKey: CustasFieldKey, inputValue: string) => {
+  const handleCustasFieldChange = (
+    fieldKey: CustasFieldKey,
+    inputValue: string
+  ) => {
     setCustasValues((previousValues) => ({
       ...previousValues,
       [fieldKey]: currencyMask(inputValue),
@@ -611,17 +615,13 @@ export default function BalcaoPage() {
       confirmLabel: 'Fechar',
       showCloseButton: true,
       renderContent: () => (
-        <div className="custom-scrollbar max-h-[60vh] space-y-4 overflow-y-auto pr-1">
-          <div className="dashboard-card-soft space-y-3 p-4">
-            <div className="flex items-center justify-between gap-3">
-              <h3 className="text-sm font-semibold text-(--titulos) dark:text-(--dark-titulos)">
-                Tabela de Emolumentos - CGJ/RJ
-              </h3>
-              <span className="text-xs font-medium text-(--cor-texto)/70 dark:text-(--dark-cor-texto)/75">
-                Consulta de referencia
-              </span>
-            </div>
-
+        <div className="custom-scrollbar max-h-[60vh] space-y-4 overflow-y-auto pr-1 pb-6">
+          <CardContainer
+            title="Tabela de Emolumentos - CGJ/RJ"
+            description="Consulta de referencia"
+            columns={1}
+            collapsible={true}
+          >
             <CustomSelectGrid<CustasTabelaRow>
               // readOnly={true}
               maxSelected={1}
@@ -666,16 +666,20 @@ export default function BalcaoPage() {
                 },
               ]}
             />
-          </div>
+          </CardContainer>
 
-          <div className="dashboard-card-soft space-y-3 p-4">
+          <CardContainer
+            title="Itens Cobrados no Ato"
+            columns={1}
+            collapsible={true}
+          >
             <h3 className="text-sm font-semibold text-(--titulos) dark:text-(--dark-titulos)">
               Itens Cobrados no Ato
             </h3>
 
             <CustomSelectGrid<CustasItensAtoRow>
               // readOnly={true}
-              
+
               rows={custasItensAtoRows}
               rowIdKey="id"
               showSelectionColumn={false}
@@ -729,14 +733,14 @@ export default function BalcaoPage() {
                 },
               ]}
             />
-          </div>
+          </CardContainer>
 
-          <div className="dashboard-card-soft space-y-4 p-4">
-            <h3 className="text-sm font-semibold text-(--titulos) dark:text-(--dark-titulos)">
-              Composicao das Custas
-            </h3>
-
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
+          <CardContainer
+            title="Composição das Custas"
+            columns={1}
+            collapsible={true}
+          >
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-4">
               {custasFieldDefinitions.map((fieldDefinition) => (
                 <CustomInput
                   key={fieldDefinition.key}
@@ -765,7 +769,7 @@ export default function BalcaoPage() {
                 hint="Valor consolidado automaticamente pela soma dos campos."
               />
             </div>
-          </div>
+          </CardContainer>
         </div>
       ),
     });
@@ -1465,7 +1469,7 @@ export default function BalcaoPage() {
             onChange={(values) => setSelectedIds(values)}
           />
 
-          <div className="flex justify-between items-center align-middle px-2 mt-4">
+          <div className="mt-4 flex items-center justify-between px-2 align-middle">
             <div className="flex">
               <CustomButton
                 size="lg"
