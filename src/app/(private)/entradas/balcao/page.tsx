@@ -319,6 +319,8 @@ const requiredSelectSchema = z
   .nullable()
   .refine((value) => value !== null, 'Selecione uma opção.');
 
+// Schema unico da pagina: centraliza validacao e saneamento final antes de enviar.
+// Isso evita diferenca entre o que a UI mostra e o que realmente vai para o payload.
 const balcaoFormSchema = z.object({
   documento: z
     .string()
@@ -422,6 +424,12 @@ const balcaoDefaultValues: FormInputValues = {
   },
 };
 
+/**
+ * Pagina de Balcao:
+ * - Usa react-hook-form + Zod para validar e normalizar dados.
+ * - Campos com mascara exibem valor formatado, mas salvam valor normalizado no form.
+ * - Acoes sensiveis (limpar e enviar) passam por confirmacao do modal manager.
+ */
 export default function BalcaoPage() {
   const { openModal, openConfirm } = useModalManager();
 
@@ -557,6 +565,7 @@ export default function BalcaoPage() {
     watch,
     formState: { errors },
   } = useForm<FormInputValues, unknown, FormValues>({
+    // Mantem tipagem alinhada com entrada e saida do schema (inclui transforms do Zod).
     // Zod concentra as regras de validação e saneamento final antes do submit.
     resolver: zodResolver(balcaoFormSchema),
     defaultValues: balcaoDefaultValues,
@@ -567,6 +576,7 @@ export default function BalcaoPage() {
   });
 
   const onSubmit: SubmitHandler<FormValues> = (data) => {
+    // Converte o valor monetario mascarado para numero bruto, util para backend e calculos.
     const payload = {
       ...data,
       ato: {
@@ -586,6 +596,7 @@ export default function BalcaoPage() {
   const [custasValues, setCustasValues] =
     useState<CustasValues>(custasDefaultValues);
 
+  // Soma memoizada para recalcular apenas quando algum campo de custas mudar.
   const custasTotal = useMemo(
     () =>
       Object.values(custasValues).reduce(
@@ -607,6 +618,7 @@ export default function BalcaoPage() {
   };
 
   const handleOpenCustasModal = async () => {
+    // O modal abre em modo alerta com conteudo customizado; bloqueio evita concorrencia de modais.
     const result = await openModal({
       kind: 'alert',
       title: 'Custas',
@@ -616,6 +628,8 @@ export default function BalcaoPage() {
       showCloseButton: true,
       renderContent: () => (
         <div className="custom-scrollbar max-h-[60vh] space-y-4 overflow-y-auto pr-1 pb-6">
+          
+          {/* Tabela de Emolumentos */}
           <CardContainer
             title="Tabela de Emolumentos - CGJ/RJ"
             description="Consulta de referencia"
@@ -667,7 +681,8 @@ export default function BalcaoPage() {
               ]}
             />
           </CardContainer>
-
+          
+          {/* Itens Cobrados no Ato */}
           <CardContainer
             title="Itens Cobrados no Ato"
             columns={1}
@@ -734,7 +749,8 @@ export default function BalcaoPage() {
               ]}
             />
           </CardContainer>
-
+          
+          {/* Composição das Custas */}
           <CardContainer
             title="Composição das Custas"
             columns={1}
@@ -770,6 +786,7 @@ export default function BalcaoPage() {
               />
             </div>
           </CardContainer>
+
         </div>
       ),
     });
@@ -796,6 +813,7 @@ export default function BalcaoPage() {
       return;
     }
 
+    // Limpa tanto o formulario quanto estados locais fora do react-hook-form.
     reset(balcaoDefaultValues);
     setServicosSearchTerm('');
     setSelectedIds([]);
@@ -816,6 +834,7 @@ export default function BalcaoPage() {
       return;
     }
 
+    // Limpeza granular: afeta somente a secao de apresentante.
     resetField('documento');
     resetField('contato');
     resetField('nome');
@@ -825,6 +844,7 @@ export default function BalcaoPage() {
   };
 
   const handleSubmitWithConfirmation = handleSubmit(async (data) => {
+    // Segunda barreira de seguranca para evitar envio acidental.
     const confirmed = await openConfirm({
       title: 'Confirmar envio?',
       description:
@@ -843,6 +863,7 @@ export default function BalcaoPage() {
   });
 
   const filteredServicosOptions = useMemo(() => {
+    // Busca tolerante a acentos para melhorar experiencia ao filtrar servicos.
     const normalizedTerm = normalizeSearchText(servicosSearchTerm);
 
     if (!normalizedTerm) {
@@ -1036,6 +1057,7 @@ export default function BalcaoPage() {
                       name={field.name}
                       value={formatHourWithColon(field.value)}
                       onBlur={() => {
+                        // Reaplica mascara no blur para garantir formato consistente antes da validacao.
                         field.onChange(formatHourWithColon(field.value));
                         field.onBlur();
                       }}
