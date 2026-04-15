@@ -84,6 +84,161 @@ const normalizeSearchText = (value: string): string =>
     .toLowerCase()
     .trim();
 
+const formatCurrencyValue = (value: number): string =>
+  value.toLocaleString('pt-BR', {
+    style: 'currency',
+    currency: 'BRL',
+  });
+
+type CustasTabelaRow = Record<string, unknown> & {
+  id: number;
+  tabela: string;
+  item: string;
+  subitem: string;
+  descricao: string;
+  valor: string;
+};
+
+type CustasItensAtoRow = Record<string, unknown> & {
+  id: number;
+  tabela: string;
+  item: string;
+  subitem: string;
+  descricao: string;
+  valor: string;
+  qtd: number;
+  total: string;
+};
+
+type CustasFieldKey =
+  | 'emolumentos'
+  | 'fetj'
+  | 'fundperj'
+  | 'funperj'
+  | 'funarpen'
+  | 'pmcmv'
+  | 'funpgalerj'
+  | 'funpgt'
+  | 'fundacpguerj'
+  | 'iss'
+  | 'distribuicao'
+  | 'selo';
+
+type CustasValues = Record<CustasFieldKey, string>;
+
+interface CustasFieldDefinition {
+  key: CustasFieldKey;
+  label: string;
+  placeholder: string;
+}
+
+const custasTabelaRows: CustasTabelaRow[] = [
+  {
+    id: 1,
+    tabela: '16',
+    item: '1',
+    subitem: '*',
+    descricao:
+      'Certidoes extraidas de livros, assentamentos ou outros papeis arquivados',
+    valor: formatCurrencyValue(34.52),
+  },
+  {
+    id: 2,
+    tabela: '16',
+    item: '2',
+    subitem: '*',
+    descricao: 'Aposicao de visto/informacao verbal',
+    valor: formatCurrencyValue(34.52),
+  },
+  {
+    id: 3,
+    tabela: '16',
+    item: '3',
+    subitem: '*',
+    descricao: 'Notificacao ou intimacao, por pessoa',
+    valor: formatCurrencyValue(29.95),
+  },
+  {
+    id: 4,
+    tabela: '16',
+    item: '5',
+    subitem: 'A',
+    descricao: 'Conciliacao ou mediacao pelo processamento',
+    valor: formatCurrencyValue(275.62),
+  },
+  {
+    id: 5,
+    tabela: '16',
+    item: '6',
+    subitem: 'B',
+    descricao: 'Arbitragem pelo registro',
+    valor: formatCurrencyValue(416.43),
+  },
+];
+
+const custasItensAtoRows: CustasItensAtoRow[] = [
+  {
+    id: 1,
+    tabela: '25',
+    item: '1',
+    subitem: 'I',
+    descricao: 'Registro com valor declarado de R$ 81.588,66 ate R$ 102.091,14',
+    valor: formatCurrencyValue(2948.83),
+    qtd: 1,
+    total: formatCurrencyValue(2948.83),
+  },
+  {
+    id: 2,
+    tabela: '25',
+    item: '2',
+    subitem: 'A',
+    descricao: 'Analise documental complementar',
+    valor: formatCurrencyValue(352.5),
+    qtd: 1,
+    total: formatCurrencyValue(352.5),
+  },
+  {
+    id: 3,
+    tabela: '25',
+    item: '3',
+    subitem: 'C',
+    descricao: 'Conferencia e diligencia administrativa',
+    valor: formatCurrencyValue(212.3),
+    qtd: 1,
+    total: formatCurrencyValue(212.3),
+  },
+];
+
+const custasFieldDefinitions: CustasFieldDefinition[] = [
+  { key: 'emolumentos', label: 'Emolumentos', placeholder: 'R$ 0,00' },
+  { key: 'fetj', label: 'Fetj (20%)', placeholder: 'R$ 0,00' },
+  { key: 'fundperj', label: 'Fundperj (5%)', placeholder: 'R$ 0,00' },
+  { key: 'funperj', label: 'Funperj (5%)', placeholder: 'R$ 0,00' },
+  { key: 'funarpen', label: 'Funarpen (6%)', placeholder: 'R$ 0,00' },
+  { key: 'pmcmv', label: 'Pmcmv (2%)', placeholder: 'R$ 0,00' },
+  { key: 'funpgalerj', label: 'Funpgalerj (1%)', placeholder: 'R$ 0,00' },
+  { key: 'funpgt', label: 'Funpgt (1%)', placeholder: 'R$ 0,00' },
+  { key: 'fundacpguerj', label: 'Fundacpguerj (1%)', placeholder: 'R$ 0,00' },
+  { key: 'iss', label: 'Iss (5,37%)', placeholder: 'R$ 0,00' },
+  { key: 'distribuicao', label: 'Distribuicao', placeholder: 'R$ 0,00' },
+  { key: 'selo', label: 'Selo', placeholder: 'R$ 0,00' },
+];
+
+const custasDefaultValues: CustasValues = {
+  emolumentos: currencyMask('294883'),
+  fetj: currencyMask('58976'),
+  fundperj: currencyMask('14744'),
+  funperj: currencyMask('14744'),
+  funarpen: currencyMask('17692'),
+  pmcmv: currencyMask('5897'),
+  funpgalerj: currencyMask('0'),
+  funpgt: currencyMask('0'),
+  fundacpguerj: currencyMask('0'),
+  iss: currencyMask('15835'),
+  distribuicao: currencyMask('0'),
+  selo: currencyMask('327'),
+};
+
 const tipoEntradaOptions = [
   { value: 'opcao1', label: 'Opção 1' },
   { value: 'opcao2', label: 'Opção 2' },
@@ -428,22 +583,189 @@ export default function BalcaoPage() {
 
   const [servicosSearchTerm, setServicosSearchTerm] = useState('');
   const [selectedIds, setSelectedIds] = useState<SelectGridValue[]>([]);
+  const [custasValues, setCustasValues] =
+    useState<CustasValues>(custasDefaultValues);
+
+  const custasTotal = useMemo(
+    () =>
+      Object.values(custasValues).reduce(
+        (accumulator, currentValue) => accumulator + getNumericValue(currentValue),
+        0
+      ),
+    [custasValues]
+  );
+
+  const handleCustasFieldChange = (fieldKey: CustasFieldKey, inputValue: string) => {
+    setCustasValues((previousValues) => ({
+      ...previousValues,
+      [fieldKey]: currencyMask(inputValue),
+    }));
+  };
 
   const handleOpenCustasModal = async () => {
     const result = await openModal({
       kind: 'alert',
       title: 'Custas',
-      description:
-        'Este e um modal de teste para validar a abertura global na tela de balcao.',
+      size: 'lg',
+      className: 'max-h-[90vh] max-w-[min(96vw,1280px)] overflow-auto',
       confirmLabel: 'Fechar',
       showCloseButton: true,
       renderContent: () => (
-        <div className="space-y-2 rounded-2xl bg-(--cor-edit) p-4 text-sm text-(--cor-texto) ring-1 ring-(--cor-borda)/60 dark:bg-(--dark-cor-edit) dark:text-(--dark-cor-texto) dark:ring-(--dark-cor-borda)/65">
-          <p>Acao disparada pelo botao Custas.</p>
-          <p>
-            Se este modal abriu, a integracao com o Modal Manager esta
-            funcionando.
-          </p>
+        <div className="custom-scrollbar max-h-[60vh] space-y-4 overflow-y-auto pr-1">
+          <div className="dashboard-card-soft space-y-3 p-4">
+            <div className="flex items-center justify-between gap-3">
+              <h3 className="text-sm font-semibold text-(--titulos) dark:text-(--dark-titulos)">
+                Tabela de Emolumentos - CGJ/RJ
+              </h3>
+              <span className="text-xs font-medium text-(--cor-texto)/70 dark:text-(--dark-cor-texto)/75">
+                Consulta de referencia
+              </span>
+            </div>
+
+            <CustomSelectGrid<CustasTabelaRow>
+              // readOnly={true}
+              maxSelected={1}
+              rows={custasTabelaRows}
+              rowIdKey="id"
+              showSelectionColumn={false}
+              density="compact"
+              roundedClassName="rounded-xl"
+              maxHeightClassName="max-h-56 min-h-56"
+              scrollViewportClassName="custom-scrollbar"
+              tableClassName="min-w-[860px]"
+              columns={[
+                {
+                  key: 'tabela',
+                  header: 'Tabela',
+                  align: 'center',
+                  widthClassName: 'w-16',
+                },
+                {
+                  key: 'item',
+                  header: 'Item',
+                  align: 'center',
+                  widthClassName: 'w-16',
+                },
+                {
+                  key: 'subitem',
+                  header: 'Subitem',
+                  align: 'center',
+                  widthClassName: 'w-20',
+                },
+                {
+                  key: 'descricao',
+                  header: 'Descricao',
+                  align: 'left',
+                  cellClassName: 'text-left',
+                },
+                {
+                  key: 'valor',
+                  header: 'Valor',
+                  align: 'right',
+                  widthClassName: 'w-32',
+                },
+              ]}
+            />
+          </div>
+
+          <div className="dashboard-card-soft space-y-3 p-4">
+            <h3 className="text-sm font-semibold text-(--titulos) dark:text-(--dark-titulos)">
+              Itens Cobrados no Ato
+            </h3>
+
+            <CustomSelectGrid<CustasItensAtoRow>
+              // readOnly={true}
+              
+              rows={custasItensAtoRows}
+              rowIdKey="id"
+              showSelectionColumn={false}
+              density="compact"
+              roundedClassName="rounded-xl"
+              maxHeightClassName="max-h-44 min-h-44"
+              scrollViewportClassName="custom-scrollbar"
+              tableClassName="min-w-[960px]"
+              columns={[
+                {
+                  key: 'tabela',
+                  header: 'Tabela',
+                  align: 'center',
+                  widthClassName: 'w-16',
+                },
+                {
+                  key: 'item',
+                  header: 'Item',
+                  align: 'center',
+                  widthClassName: 'w-16',
+                },
+                {
+                  key: 'subitem',
+                  header: 'Subitem',
+                  align: 'center',
+                  widthClassName: 'w-20',
+                },
+                {
+                  key: 'descricao',
+                  header: 'Descricao',
+                  align: 'left',
+                  cellClassName: 'text-left',
+                },
+                {
+                  key: 'valor',
+                  header: 'Valor',
+                  align: 'right',
+                  widthClassName: 'w-32',
+                },
+                {
+                  key: 'qtd',
+                  header: 'Qtd.',
+                  align: 'center',
+                  widthClassName: 'w-16',
+                },
+                {
+                  key: 'total',
+                  header: 'Total',
+                  align: 'right',
+                  widthClassName: 'w-32',
+                },
+              ]}
+            />
+          </div>
+
+          <div className="dashboard-card-soft space-y-4 p-4">
+            <h3 className="text-sm font-semibold text-(--titulos) dark:text-(--dark-titulos)">
+              Composicao das Custas
+            </h3>
+
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
+              {custasFieldDefinitions.map((fieldDefinition) => (
+                <CustomInput
+                  key={fieldDefinition.key}
+                  label={fieldDefinition.label}
+                  placeholder={fieldDefinition.placeholder}
+                  autoComplete="off"
+                  inputMode="numeric"
+                  value={custasValues[fieldDefinition.key]}
+                  onChange={(event: React.ChangeEvent<HTMLInputElement>) => {
+                    handleCustasFieldChange(
+                      fieldDefinition.key,
+                      event.target.value
+                    );
+                  }}
+                />
+              ))}
+            </div>
+
+            <div className="grid grid-cols-1 gap-3 sm:max-w-sm">
+              <CustomInput
+                label="Total"
+                value={formatCurrencyValue(custasTotal)}
+                readOnly={true}
+                className="font-semibold"
+                leftAdornment={<CurrencyDollarIcon className="size-4" />}
+                hint="Valor consolidado automaticamente pela soma dos campos."
+              />
+            </div>
+          </div>
         </div>
       ),
     });
