@@ -1,3 +1,5 @@
+import ModalHost from '@/components/ui/modal/ModalHost';
+import { ModalManagerProvider } from '@/context/ModalManagerContext';
 import { NotificationProvider } from '@/context/NotificationContext';
 import { SidebarProvider } from '@/context/SidebarContext';
 import { ThemeProvider } from '@/context/ThemeContext';
@@ -38,7 +40,10 @@ export default function RootLayout({
                 }
                 maxNotifications={50}
               >
-                <SidebarProvider>{children}</SidebarProvider>
+                <ModalManagerProvider>
+                  <SidebarProvider>{children}</SidebarProvider>
+                  <ModalHost />
+                </ModalManagerProvider>
               </NotificationProvider>
             </ValuesVisibilityProvider>
           </ThemeProvider>

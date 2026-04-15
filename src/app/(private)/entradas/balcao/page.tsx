@@ -16,6 +16,7 @@ import CustomButton from '@/components/buttons/CustomButton';
 import CustomSelectGrid, {
   SelectGridValue,
 } from '@/components/inputs/CustomSelectGrid';
+import useModalManager from '@/hooks/useModalManager';
 import { CloseLineIcon } from '@/icons';
 import { CurrencyDollarIcon } from '@heroicons/react/16/solid';
 import { currencyMask, getNumericValue } from '@/utils/masks/monetaryMask';
@@ -112,7 +113,8 @@ const servicosOptions = [
   },
   {
     value: '2',
-    label: 'Registro de mídia de documentos digitalizados ou nato-digitais até 5 gb',
+    label:
+      'Registro de mídia de documentos digitalizados ou nato-digitais até 5 gb',
     description: 'Código 7000',
   },
   {
@@ -212,9 +214,7 @@ const balcaoFormSchema = z.object({
   natureza: requiredSelectSchema,
   tipoCobranca: requiredSelectSchema,
   ato: z.object({
-    valorDocumento: z
-      .string()
-      .min(1, 'Informe o valor do documento.'),
+    valorDocumento: z.string().min(1, 'Informe o valor do documento.'),
     protocolo: z
       .string()
       .min(1, 'Informe o protocolo.')
@@ -226,7 +226,10 @@ const balcaoFormSchema = z.object({
       .string()
       .trim()
       .min(1, 'Informe a data da entrada.')
-      .regex(/^\d{2}\/\d{2}\/\d{4}$/, 'Data da entrada deve estar no formato DD/MM/AAAA.'),
+      .regex(
+        /^\d{2}\/\d{2}\/\d{4}$/,
+        'Data da entrada deve estar no formato DD/MM/AAAA.'
+      ),
     servicos: z
       .array(z.union([z.string(), z.number()]))
       .min(1, 'Selecione ao menos 1 serviço.'),
@@ -241,37 +244,167 @@ const balcaoFormSchema = z.object({
 type FormInputValues = z.input<typeof balcaoFormSchema>;
 type FormValues = z.output<typeof balcaoFormSchema>;
 
+const balcaoDefaultValues: FormInputValues = {
+  documento: '',
+  contato: '',
+  nome: '',
+  email: '',
+  observacao: '',
+  horarioUrgencia: '',
+  tipoEntrada: null,
+  natureza: null,
+  tipoCobranca: null,
+  ato: {
+    valorDocumento: currencyMask('0'),
+    protocolo: '',
+    dataEntrada: '',
+    servicos: [],
+    quantidade: 1,
+    nomes: 0,
+    paginas: 0,
+    vias: 0,
+    diligencias: 0,
+  },
+};
+
 export default function BalcaoPage() {
+  const { openModal, openConfirm } = useModalManager();
+
+  const recibo = [
+    {
+      id: 1,
+      protocolo: '6000',
+      descricao: 'Registro de Titulo',
+      emolumentos: 'R$ 100,00',
+      fundos: 'R$ 100,00',
+      iss: 'R$ 100,00',
+      dist: 'R$ 100,00',
+      selo: 'R$ 100,00',
+      total: 'R$ 500,00',
+    },
+    {
+      id: 2,
+      protocolo: '7000',
+      descricao: 'Registro de Midia',
+      emolumentos: 'R$ 150,00',
+      fundos: 'R$ 100,00',
+      iss: 'R$ 100,00',
+      dist: 'R$ 100,00',
+      selo: 'R$ 100,00',
+      total: 'R$ 500,00',
+    },
+    {
+      id: 3,
+      protocolo: '8000',
+      descricao: 'Registro de Imóveis',
+      emolumentos: 'R$ 200,00',
+      fundos: 'R$ 100,00',
+      iss: 'R$ 100,00',
+      dist: 'R$ 100,00',
+      selo: 'R$ 100,00',
+      total: 'R$ 500,00',
+    },
+    {
+      id: 4,
+      protocolo: '9000',
+      descricao: 'Registro Civil de Pessoas Naturais',
+      emolumentos: 'R$ 250,00',
+      fundos: 'R$ 100,00',
+      iss: 'R$ 100,00',
+      dist: 'R$ 100,00',
+      selo: 'R$ 100,00',
+      total: 'R$ 500,00',
+    },
+    {
+      id: 5,
+      protocolo: '10000',
+      descricao: 'Registro de Contratos',
+      emolumentos: 'R$ 300,00',
+      fundos: 'R$ 100,00',
+      iss: 'R$ 100,00',
+      dist: 'R$ 100,00',
+      selo: 'R$ 100,00',
+      total: 'R$ 500,00',
+    },
+    {
+      id: 6,
+      protocolo: '11000',
+      descricao: 'Registro de Distribuição',
+      emolumentos: 'R$ 350,00',
+      fundos: 'R$ 100,00',
+      iss: 'R$ 100,00',
+      dist: 'R$ 100,00',
+      selo: 'R$ 100,00',
+      total: 'R$ 500,00',
+    },
+    {
+      id: 7,
+      protocolo: '12000',
+      descricao: 'Registro de Imóveis Rurais',
+      emolumentos: 'R$ 400,00',
+      fundos: 'R$ 100,00',
+      iss: 'R$ 100,00',
+      dist: 'R$ 100,00',
+      selo: 'R$ 100,00',
+      total: 'R$ 500,00',
+    },
+    {
+      id: 8,
+      protocolo: '13000',
+      descricao: 'Registro de Imóveis Urbanos',
+      emolumentos: 'R$ 450,00',
+      fundos: 'R$ 100,00',
+      iss: 'R$ 100,00',
+      dist: 'R$ 100,00',
+      selo: 'R$ 100,00',
+      total: 'R$ 500,00',
+    },
+    {
+      id: 9,
+      protocolo: '14000',
+      descricao: 'Registro de Imóveis Especiais',
+      emolumentos: 'R$ 500,00',
+      fundos: 'R$ 100,00',
+      iss: 'R$ 100,00',
+      dist: 'R$ 100,00',
+      selo: 'R$ 100,00',
+      total: 'R$ 500,00',
+    },
+    {
+      id: 10,
+      protocolo: '15000',
+      descricao: 'Registro de Títulos e Documentos',
+      emolumentos: 'R$ 550,00',
+      fundos: 'R$ 100,00',
+      iss: 'R$ 100,00',
+      dist: 'R$ 100,00',
+      selo: 'R$ 100,00',
+      total: 'R$ 500,00',
+    },
+    {
+      id: 11,
+      protocolo: '16000',
+      descricao: 'Registro de Protestos',
+      emolumentos: 'R$ 550,00',
+      fundos: 'R$ 100,00',
+      iss: 'R$ 100,00',
+      dist: 'R$ 100,00',
+      selo: 'R$ 100,00',
+      total: 'R$ 500,00',
+    },
+  ];
+
   const {
     control,
     handleSubmit,
+    reset,
+    resetField,
     watch,
     formState: { errors },
   } = useForm<FormInputValues, unknown, FormValues>({
     // Zod concentra as regras de validação e saneamento final antes do submit.
     resolver: zodResolver(balcaoFormSchema),
-    defaultValues: {
-      documento: '',
-      contato: '',
-      nome: '',
-      email: '',
-      observacao: '',
-      horarioUrgencia: '',
-      tipoEntrada: null,
-      natureza: null,
-      tipoCobranca: null,
-      ato: {
-        valorDocumento: currencyMask('0'),
-        protocolo: '',
-        dataEntrada: '',
-        servicos: [],
-        quantidade: 1,
-        nomes: 0,
-        paginas: 0,
-        vias: 0,
-        diligencias: 0,
-      },
-    },
+    defaultValues: balcaoDefaultValues,
     // Primeira validação ao tocar/sair do campo e, depois disso, revalida em cada mudança.
     mode: 'onTouched',
     reValidateMode: 'onChange',
@@ -296,6 +429,93 @@ export default function BalcaoPage() {
   const [servicosSearchTerm, setServicosSearchTerm] = useState('');
   const [selectedIds, setSelectedIds] = useState<SelectGridValue[]>([]);
 
+  const handleOpenCustasModal = async () => {
+    const result = await openModal({
+      kind: 'alert',
+      title: 'Custas',
+      description:
+        'Este e um modal de teste para validar a abertura global na tela de balcao.',
+      confirmLabel: 'Fechar',
+      showCloseButton: true,
+      renderContent: () => (
+        <div className="space-y-2 rounded-2xl bg-(--cor-edit) p-4 text-sm text-(--cor-texto) ring-1 ring-(--cor-borda)/60 dark:bg-(--dark-cor-edit) dark:text-(--dark-cor-texto) dark:ring-(--dark-cor-borda)/65">
+          <p>Acao disparada pelo botao Custas.</p>
+          <p>
+            Se este modal abriu, a integracao com o Modal Manager esta
+            funcionando.
+          </p>
+        </div>
+      ),
+    });
+
+    if (result.status === 'blocked') {
+      console.info(
+        '[Balcao] Modal de Custas bloqueado: ja existe um modal aberto.'
+      );
+    }
+  };
+
+  const handleClearAll = async () => {
+    const confirmed = await openConfirm({
+      title: 'Limpar todos os dados?',
+      description:
+        'Essa ação remove os dados preenchidos do formulário e a seleção da grade.',
+      confirmLabel: 'Sim, limpar tudo',
+      cancelLabel: 'Cancelar',
+      showCloseButton: true,
+      disableBackdropClose: true,
+    });
+
+    if (!confirmed) {
+      return;
+    }
+
+    reset(balcaoDefaultValues);
+    setServicosSearchTerm('');
+    setSelectedIds([]);
+  };
+
+  const handleClearApresentante = async () => {
+    const confirmed = await openConfirm({
+      title: 'Limpar informações do apresentante?',
+      description:
+        'Essa ação remove apenas os dados preenchidos na seção de apresentante.',
+      confirmLabel: 'Sim, limpar apresentante',
+      cancelLabel: 'Cancelar',
+      showCloseButton: true,
+      disableBackdropClose: true,
+    });
+
+    if (!confirmed) {
+      return;
+    }
+
+    resetField('documento');
+    resetField('contato');
+    resetField('nome');
+    resetField('email');
+    resetField('observacao');
+    resetField('horarioUrgencia');
+  };
+
+  const handleSubmitWithConfirmation = handleSubmit(async (data) => {
+    const confirmed = await openConfirm({
+      title: 'Confirmar envio?',
+      description:
+        'Confira os dados antes de continuar. Esta ação vai enviar as informações do balcão.',
+      confirmLabel: 'Sim, enviar',
+      cancelLabel: 'Revisar',
+      showCloseButton: true,
+      disableBackdropClose: true,
+    });
+
+    if (!confirmed) {
+      return;
+    }
+
+    onSubmit(data);
+  });
+
   const filteredServicosOptions = useMemo(() => {
     const normalizedTerm = normalizeSearchText(servicosSearchTerm);
 
@@ -316,7 +536,7 @@ export default function BalcaoPage() {
     <PageTitle title="Balcão" description="Gerencie lançamentos de balcão">
       {/* Formulário de apresentantes */}
       <form
-        onSubmit={handleSubmit(onSubmit)}
+        onSubmit={handleSubmitWithConfirmation}
         className="col-span-full space-y-4"
         noValidate
       >
@@ -325,14 +545,18 @@ export default function BalcaoPage() {
           <CustomButton
             size="lg"
             title="Limpar Apresentante"
-            onClick={() => {}}
+            onClick={() => {
+              void handleClearApresentante();
+            }}
           />
           <CustomButton
             backgroundColor="#940100"
             hoverBackgroundColor="#F9A526"
             size="lg"
             title="Limpar tudo"
-            onClick={() => {}}
+            onClick={() => {
+              void handleClearAll();
+            }}
           />
         </div>
 
@@ -832,7 +1056,7 @@ export default function BalcaoPage() {
           collapsible={true}
           columns={1}
         >
-          <div className="flex justify-end gap-4 mb-2">
+          <div className="mb-2 flex justify-end gap-4">
             <CustomButton
               circle={true}
               size="lg"
@@ -847,50 +1071,108 @@ export default function BalcaoPage() {
               size="lg"
               icon={<CurrencyDollarIcon className="size-5" />}
               title="Custas"
-              onClick={() => console.log('Gerar descrição automática')}
+              onClick={() => {
+                void handleOpenCustasModal();
+              }}
             />
           </div>
+
           <CustomSelectGrid
+            showSelectionColumn={false}
+            // selectionMode="single"
             maxSelected={1}
             maxHeightClassName="max-h-80 min-h-80"
             scrollViewportClassName="custom-scrollbar"
             // roundedClassName="rounded-xl"
-            rows={[
-              { id: 1, codigo: '6000', descricao: 'Registro de Titulo' },
-              { id: 2, codigo: '7000', descricao: 'Registro de Midia' },
-              { id: 3, codigo: '8000', descricao: 'Registro de Imóveis' },
-              { id: 4, codigo: '9000', descricao: 'Registro Civil de Pessoas Naturais' },
-              { id: 5, codigo: '10000', descricao: 'Registro de Contratos' },
-              { id: 6, codigo: '11000', descricao: 'Registro de Distribuição' },
-              { id: 7, codigo: '12000', descricao: 'Registro de Imóveis Rurais' },
-              { id: 8, codigo: '13000', descricao: 'Registro de Imóveis Urbanos' },
-              { id: 9, codigo: '14000', descricao: 'Registro de Imóveis Especiais' },
-              { id: 10, codigo: '15000', descricao: 'Registro de Títulos e Documentos' },
-              { id: 11, codigo: '16000', descricao: 'Registro de Protestos' },
-            ]}
+            rows={recibo}
             columns={[
               {
-                key: 'codigo',
-                header: 'Codigo',
-                sortable: true,
-                widthClassName: 'w-28',
+                key: 'protocolo',
+                header: 'Protocolo',
+                // sortable: true,
+                widthClassName: 'w-20',
               },
-              { key: 'descricao', header: 'Descricao', sortable: true },
+              {
+                key: 'descricao',
+                header: 'Descricao',
+                cellClassName: 'text-left',
+                align: 'left',
+                // sortable: true,
+              },
+              {
+                key: 'emolumentos',
+                header: 'Emolumentos',
+                cellClassName: 'text-right',
+                align: 'center',
+                // sortable: true,
+              },
+              {
+                key: 'fundos',
+                header: 'Fundos',
+                cellClassName: 'text-right',
+                align: 'center',
+                // sortable: true,
+              },
+              {
+                key: 'iss',
+                header: 'ISS',
+                cellClassName: 'text-right',
+                align: 'center',
+              },
+              {
+                key: 'dist',
+                header: 'Dist',
+                cellClassName: 'text-right',
+                align: 'center',
+              },
+              {
+                key: 'selo',
+                header: 'Selo',
+                cellClassName: 'text-right',
+                align: 'center',
+              },
+              {
+                key: 'total',
+                header: 'Total',
+                cellClassName: 'text-right',
+                align: 'center',
+              },
             ]}
-            selectionMode="multiple"
             rowIdKey="id"
             value={selectedIds}
             onChange={(values) => setSelectedIds(values)}
           />
 
-          <div className="flex justify-end">
-            <CustomButton
-              size="lg"
-              type="submit"
-              title="Finalizar"
-              onClick={() => console.log('Valores do formulario: ', watch())}
-            />
+          <div className="flex justify-between items-center align-middle px-2 mt-4">
+            <div className="flex">
+              <CustomButton
+                size="lg"
+                type="submit"
+                title="Finalizar"
+                onClick={() => console.log('Valores do formulario: ', watch())}
+              />
+            </div>
+
+            <div className="text-end">
+              <h1 className="text-xl font-bold">
+                Total: R${' '}
+                {recibo
+                  .reduce(
+                    (sum, item) =>
+                      sum +
+                      parseFloat(
+                        item.total.replace('R$ ', '').replace(',', '.')
+                      ),
+                    0
+                  )
+                  .toFixed(2)}
+              </h1>
+              <h2 className="text-lg font-light opacity-95">
+                Quantidade de serviços: {recibo.length}
+              </h2>
+            </div>
           </div>
+          {/* Total e quantidade de serviços */}
         </CardContainer>
 
         {/* Botão de enviar */}

@@ -2,7 +2,6 @@
 
 import React, { useEffect } from 'react';
 
-// Componente Modal atualizado
 interface ModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -10,6 +9,10 @@ interface ModalProps {
   children: React.ReactNode;
   showCloseButton?: boolean;
   isFullscreen?: boolean;
+  disableBackdropClose?: boolean;
+  disableEscKey?: boolean;
+  titleId?: string;
+  ariaLabel?: string;
 }
 
 export const Modal: React.FC<ModalProps> = ({
@@ -19,43 +22,98 @@ export const Modal: React.FC<ModalProps> = ({
   className,
   showCloseButton = true,
   isFullscreen = false,
+  disableBackdropClose = false,
+  disableEscKey = false,
+  titleId,
+  ariaLabel,
 }) => {
   const modalRef = React.useRef<HTMLDivElement>(null);
+  const previousFocusedElementRef = React.useRef<HTMLElement | null>(null);
 
   useEffect(() => {
+    if (!isOpen) {
+      return;
+    }
+
+    previousFocusedElementRef.current = document.activeElement as HTMLElement;
+    const previousOverflow = document.body.style.overflow;
+
+    const focusableElements = modalRef.current?.querySelectorAll<HTMLElement>(
+      'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+    );
+
+    const firstFocusableElement = focusableElements?.[0];
+    const lastFocusableElement =
+      focusableElements && focusableElements.length > 0
+        ? focusableElements[focusableElements.length - 1]
+        : null;
+
+    // Foco inicial no primeiro elemento interativo ou no próprio container.
+    if (firstFocusableElement) {
+      firstFocusableElement.focus();
+    } else {
+      modalRef.current?.focus();
+    }
+
     const handleEscape = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') {
+      if (!disableEscKey && event.key === 'Escape') {
         onClose();
       }
     };
 
-    if (isOpen) {
-      document.addEventListener('keydown', handleEscape);
-      document.body.style.overflow = 'hidden';
-    }
+    const handleFocusTrap = (event: KeyboardEvent) => {
+      if (event.key !== 'Tab' || !firstFocusableElement || !lastFocusableElement) {
+        return;
+      }
+
+      if (event.shiftKey && document.activeElement === firstFocusableElement) {
+        event.preventDefault();
+        lastFocusableElement.focus();
+      } else if (!event.shiftKey && document.activeElement === lastFocusableElement) {
+        event.preventDefault();
+        firstFocusableElement.focus();
+      }
+    };
+
+    document.addEventListener('keydown', handleEscape);
+    document.addEventListener('keydown', handleFocusTrap);
+    document.body.style.overflow = 'hidden';
 
     return () => {
       document.removeEventListener('keydown', handleEscape);
-      document.body.style.overflow = 'unset';
+      document.removeEventListener('keydown', handleFocusTrap);
+      document.body.style.overflow = previousOverflow;
+      previousFocusedElementRef.current?.focus?.();
     };
-  }, [isOpen, onClose]);
+  }, [disableEscKey, isOpen, onClose]);
 
   if (!isOpen) return null;
 
   const contentClasses = isFullscreen
     ? 'w-full h-full'
-    : 'relative w-full rounded-3xl bg-white shadow-theme-xl dark:bg-gray-900 dark:shadow-theme-xl';
+    : 'relative w-full rounded-3xl bg-(--cor-card) shadow-theme-xl dark:bg-(--dark-cor-card) dark:shadow-theme-xl';
+
+  const handleBackdropClick = () => {
+    if (!disableBackdropClose) {
+      onClose();
+    }
+  };
 
   return (
-    <div className="modal fixed inset-0 z-99999 flex items-center justify-center">
+    <div className="modal fixed inset-0 z-99999 flex items-center justify-center" role="presentation">
       {!isFullscreen && (
         <div
           className="fixed inset-0 h-full w-full bg-gray-900/40 backdrop-blur-xl"
-          onClick={onClose}
+          onClick={handleBackdropClick}
         ></div>
       )}
       <div
         ref={modalRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={titleId}
+        aria-label={ariaLabel}
+        tabIndex={-1}
         className={`${contentClasses} ${className}`}
         onClick={(e) => e.stopPropagation()}
       >
