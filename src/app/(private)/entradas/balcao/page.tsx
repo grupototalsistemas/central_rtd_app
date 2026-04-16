@@ -1,12 +1,12 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { zodResolver } from '@hookform/resolvers/zod';
 import CardContainer from '@/components/card/CardContainer';
 import CustomInput from '@/components/inputs/CustomInput';
 import PageTitle from '@/components/page/PageTitle';
 import { formatCpfCnpj, validarCpfCnpj } from '@/utils/formatCpfCnpj';
-import { Controller, SubmitHandler, useForm } from 'react-hook-form';
+import { Controller, useForm } from 'react-hook-form';
 import { z } from 'zod';
 import CustomTextbox from '@/components/inputs/CustomTextbox';
 import CustomSelect from '@/components/inputs/CustomSelect';
@@ -110,6 +110,24 @@ type CustasItensAtoRow = Record<string, unknown> & {
   total: string;
 };
 
+type SelectOptionValue = string | number;
+
+type ServicoSelecionado = {
+  value: SelectOptionValue;
+  label: string;
+  description: string;
+};
+
+type AtoItemCobrado = {
+  id: number;
+  tabela: string;
+  item: string;
+  subitem: string;
+  descricao: string;
+  valorUnitarioCentavos: number;
+  qtd: number;
+};
+
 type CustasFieldKey =
   | 'emolumentos'
   | 'fetj'
@@ -125,6 +143,56 @@ type CustasFieldKey =
   | 'selo';
 
 type CustasValues = Record<CustasFieldKey, string>;
+
+type CustasAliquotaFieldKey = Exclude<
+  CustasFieldKey,
+  'emolumentos' | 'distribuicao' | 'selo'
+>;
+
+type AtoCustas = {
+  itensCobrados: AtoItemCobrado[];
+  composicao: CustasValues;
+  totalCentavos: number;
+};
+
+type AtoSalvo = {
+  id: number;
+  tipoEntrada: SelectOptionValue;
+  natureza: SelectOptionValue;
+  tipoCobranca: SelectOptionValue;
+  informacoesAto: {
+    valorDocumento: string;
+    valorDocumentoNumerico: number;
+    protocolo: string;
+    dataEntrada: string;
+    servicos: ServicoSelecionado[];
+    quantidade: number;
+    nomes: number;
+    paginas: number;
+    vias: number;
+    diligencias: number;
+  };
+  custas: AtoCustas;
+};
+
+type ReciboRow = Record<string, unknown> & {
+  id: number;
+  protocolo: string;
+  descricao: string;
+  emolumentos: string;
+  fundos: string;
+  iss: string;
+  dist: string;
+  selo: string;
+  total: string;
+  totalCentavos: number;
+};
+
+type CustasModalDraft = {
+  itensCobrados: AtoItemCobrado[];
+  distribuicaoCentavos: number;
+  seloCentavos: number;
+};
 
 interface CustasFieldDefinition {
   key: CustasFieldKey;
@@ -176,39 +244,6 @@ const custasTabelaRows: CustasTabelaRow[] = [
   },
 ];
 
-const custasItensAtoRows: CustasItensAtoRow[] = [
-  {
-    id: 1,
-    tabela: '25',
-    item: '1',
-    subitem: 'I',
-    descricao: 'Registro com valor declarado de R$ 81.588,66 ate R$ 102.091,14',
-    valor: formatCurrencyValue(2948.83),
-    qtd: 1,
-    total: formatCurrencyValue(2948.83),
-  },
-  {
-    id: 2,
-    tabela: '25',
-    item: '2',
-    subitem: 'A',
-    descricao: 'Analise documental complementar',
-    valor: formatCurrencyValue(352.5),
-    qtd: 1,
-    total: formatCurrencyValue(352.5),
-  },
-  {
-    id: 3,
-    tabela: '25',
-    item: '3',
-    subitem: 'C',
-    descricao: 'Conferencia e diligencia administrativa',
-    valor: formatCurrencyValue(212.3),
-    qtd: 1,
-    total: formatCurrencyValue(212.3),
-  },
-];
-
 const custasFieldDefinitions: CustasFieldDefinition[] = [
   { key: 'emolumentos', label: 'Emolumentos', placeholder: 'R$ 0,00' },
   { key: 'fetj', label: 'Fetj (20%)', placeholder: 'R$ 0,00' },
@@ -224,20 +259,42 @@ const custasFieldDefinitions: CustasFieldDefinition[] = [
   { key: 'selo', label: 'Selo', placeholder: 'R$ 0,00' },
 ];
 
-const custasDefaultValues: CustasValues = {
-  emolumentos: currencyMask('294883'),
-  fetj: currencyMask('58976'),
-  fundperj: currencyMask('14744'),
-  funperj: currencyMask('14744'),
-  funarpen: currencyMask('17692'),
-  pmcmv: currencyMask('5897'),
-  funpgalerj: currencyMask('0'),
-  funpgt: currencyMask('0'),
-  fundacpguerj: currencyMask('0'),
-  iss: currencyMask('15835'),
-  distribuicao: currencyMask('0'),
-  selo: currencyMask('327'),
+const aliquotaFieldKeys: CustasAliquotaFieldKey[] = [
+  'fetj',
+  'fundperj',
+  'funperj',
+  'funarpen',
+  'pmcmv',
+  'funpgalerj',
+  'funpgt',
+  'fundacpguerj',
+  'iss',
+];
+
+const fundosFieldKeys: CustasFieldKey[] = [
+  'fetj',
+  'fundperj',
+  'funperj',
+  'funarpen',
+  'pmcmv',
+  'funpgalerj',
+  'funpgt',
+  'fundacpguerj',
+];
+
+const custasAliquotaBasisPoints: Record<CustasAliquotaFieldKey, number> = {
+  fetj: 2000,
+  fundperj: 500,
+  funperj: 500,
+  funarpen: 600,
+  pmcmv: 200,
+  funpgalerj: 100,
+  funpgt: 100,
+  fundacpguerj: 100,
+  iss: 537,
 };
+
+const modifiableCustasFieldKeys: CustasFieldKey[] = ['distribuicao', 'selo'];
 
 const tipoEntradaOptions = [
   { value: 'opcao1', label: 'Opção 1' },
@@ -424,50 +481,152 @@ const balcaoDefaultValues: FormInputValues = {
   },
 };
 
-// Alteracao pontual e facil de reverter: basta trocar para `false`.
-const ENABLE_EDITABLE_CUSTAS_FIELDS_IN_MODAL = true;
+const centsToCurrencyMask = (valueInCents: number): string =>
+  currencyMask(String(Math.max(0, valueInCents)));
+
+const currencyToCents = (currencyValue: string): number =>
+  Math.max(0, Math.trunc(getNumericValue(currencyValue) * 100));
+
+const buildAtoItemFromTabelaRow = (
+  row: CustasTabelaRow,
+  quantity: number = 1
+): AtoItemCobrado => ({
+  id: row.id,
+  tabela: row.tabela,
+  item: row.item,
+  subitem: row.subitem,
+  descricao: row.descricao,
+  valorUnitarioCentavos: currencyToCents(row.valor),
+  qtd: Math.max(1, Math.trunc(quantity)),
+});
+
+const mapAtoItemsToGridRows = (items: AtoItemCobrado[]): CustasItensAtoRow[] => {
+  return items.map((item) => {
+    const totalCentavos = item.valorUnitarioCentavos * item.qtd;
+
+    return {
+      id: item.id,
+      tabela: item.tabela,
+      item: item.item,
+      subitem: item.subitem,
+      descricao: item.descricao,
+      valor: centsToCurrencyMask(item.valorUnitarioCentavos),
+      qtd: item.qtd,
+      total: centsToCurrencyMask(totalCentavos),
+    };
+  });
+};
+
+const calculateCustasFromItems = (
+  items: AtoItemCobrado[],
+  distribuicaoCentavos: number,
+  seloCentavos: number
+): { composicao: CustasValues; totalCentavos: number } => {
+  const normalizedDistribuicao = Math.max(0, Math.trunc(distribuicaoCentavos));
+  const normalizedSelo = Math.max(0, Math.trunc(seloCentavos));
+  const aliquotaTotals = aliquotaFieldKeys.reduce(
+    (accumulator, currentKey) => {
+      return {
+        ...accumulator,
+        [currentKey]: 0,
+      };
+    },
+    {} as Record<CustasAliquotaFieldKey, number>
+  );
+
+  let emolumentosCentavos = 0;
+
+  for (const item of items) {
+    const itemQuantity = Math.max(1, Math.trunc(item.qtd));
+    const itemTotalCentavos = item.valorUnitarioCentavos * itemQuantity;
+
+    emolumentosCentavos += itemTotalCentavos;
+
+    for (const aliquotaKey of aliquotaFieldKeys) {
+      const basisPoints = custasAliquotaBasisPoints[aliquotaKey];
+      const aliquotaContribution = Math.trunc(
+        (itemTotalCentavos * basisPoints) / 10000
+      );
+      aliquotaTotals[aliquotaKey] += aliquotaContribution;
+    }
+  }
+
+  const composicao: CustasValues = {
+    emolumentos: centsToCurrencyMask(emolumentosCentavos),
+    fetj: centsToCurrencyMask(aliquotaTotals.fetj),
+    fundperj: centsToCurrencyMask(aliquotaTotals.fundperj),
+    funperj: centsToCurrencyMask(aliquotaTotals.funperj),
+    funarpen: centsToCurrencyMask(aliquotaTotals.funarpen),
+    pmcmv: centsToCurrencyMask(aliquotaTotals.pmcmv),
+    funpgalerj: centsToCurrencyMask(aliquotaTotals.funpgalerj),
+    funpgt: centsToCurrencyMask(aliquotaTotals.funpgt),
+    fundacpguerj: centsToCurrencyMask(aliquotaTotals.fundacpguerj),
+    iss: centsToCurrencyMask(aliquotaTotals.iss),
+    distribuicao: centsToCurrencyMask(normalizedDistribuicao),
+    selo: centsToCurrencyMask(normalizedSelo),
+  };
+
+  const totalCentavos =
+    emolumentosCentavos +
+    normalizedDistribuicao +
+    normalizedSelo +
+    aliquotaFieldKeys.reduce(
+      (accumulator, currentKey) => accumulator + aliquotaTotals[currentKey],
+      0
+    );
+
+  return {
+    composicao,
+    totalCentavos,
+  };
+};
+
+const createEmptyAtoCustas = (): AtoCustas => {
+  const calculatedCustas = calculateCustasFromItems([], 0, 0);
+
+  return {
+    itensCobrados: [],
+    composicao: calculatedCustas.composicao,
+    totalCentavos: calculatedCustas.totalCentavos,
+  };
+};
+
+const resolveOptionLabel = (
+  options: Array<{ value: SelectOptionValue; label: string }>,
+  value: SelectOptionValue
+): string => {
+  const matchedOption = options.find(
+    (option) => String(option.value) === String(value)
+  );
+
+  return matchedOption?.label ?? String(value);
+};
+
+const getCustasFieldCentavos = (
+  values: CustasValues,
+  field: CustasFieldKey
+): number => currencyToCents(values[field]);
 
 interface CustasComposicaoCardProps {
-  initialValues: CustasValues;
-  editable: boolean;
-  onValuesChange: (nextValues: CustasValues) => void;
+  values: CustasValues;
+  disabled: boolean;
+  onManualFieldChange: (field: Extract<CustasFieldKey, 'distribuicao' | 'selo'>, value: string) => void;
 }
 
 const CustasComposicaoCard = ({
-  initialValues,
-  editable,
-  onValuesChange,
+  values,
+  disabled,
+  onManualFieldChange,
 }: CustasComposicaoCardProps) => {
-  const [localValues, setLocalValues] = useState<CustasValues>(initialValues);
-
-  const localTotal = useMemo(
+  const localTotalCentavos = useMemo(
     () =>
-      Object.values(localValues).reduce(
+      Object.values(values).reduce(
         (accumulator, currentValue) =>
-          accumulator + getNumericValue(currentValue),
+          accumulator + currencyToCents(currentValue),
         0
       ),
-    [localValues]
+    [values]
   );
-
-  const handleLocalFieldChange = (
-    fieldKey: CustasFieldKey,
-    inputValue: string
-  ) => {
-    if (!editable) {
-      return;
-    }
-
-    setLocalValues((previousValues) => {
-      const nextValues = {
-        ...previousValues,
-        [fieldKey]: currencyMask(inputValue),
-      };
-
-      onValuesChange(nextValues);
-      return nextValues;
-    });
-  };
 
   return (
     <CardContainer title="Composição das Custas" columns={1} collapsible={true}>
@@ -479,10 +638,14 @@ const CustasComposicaoCard = ({
             placeholder={fieldDefinition.placeholder}
             autoComplete="off"
             inputMode="numeric"
-            readOnly={!editable}
-            value={localValues[fieldDefinition.key]}
+            readOnly={
+              !modifiableCustasFieldKeys.includes(fieldDefinition.key) || disabled
+            }
+            value={values[fieldDefinition.key]}
             onChange={(event: React.ChangeEvent<HTMLInputElement>) => {
-              handleLocalFieldChange(fieldDefinition.key, event.target.value);
+              if (fieldDefinition.key === 'distribuicao' || fieldDefinition.key === 'selo') {
+                onManualFieldChange(fieldDefinition.key, event.target.value);
+              }
             }}
           />
         ))}
@@ -491,7 +654,7 @@ const CustasComposicaoCard = ({
       <div className="grid grid-cols-1 gap-3 sm:max-w-sm">
         <CustomInput
           label="Total"
-          value={formatCurrencyValue(localTotal)}
+          value={centsToCurrencyMask(localTotalCentavos)}
           readOnly={true}
           className="font-semibold"
           leftAdornment={<CurrencyDollarIcon className="size-4" />}
@@ -499,6 +662,328 @@ const CustasComposicaoCard = ({
         />
       </div>
     </CardContainer>
+  );
+};
+
+interface CustasModalContentProps {
+  initialItensCobrados: AtoItemCobrado[];
+  initialDistribuicaoCentavos: number;
+  initialSeloCentavos: number;
+  disabled: boolean;
+  onDraftChange: (draft: CustasModalDraft) => void;
+}
+
+const CustasModalContent = ({
+  initialItensCobrados,
+  initialDistribuicaoCentavos,
+  initialSeloCentavos,
+  disabled,
+  onDraftChange,
+}: CustasModalContentProps) => {
+  const [selectedTabelaValues, setSelectedTabelaValues] = useState<SelectGridValue[]>([]);
+  const [selectedTabelaRows, setSelectedTabelaRows] = useState<CustasTabelaRow[]>([]);
+  const [itensCobrados, setItensCobrados] = useState<AtoItemCobrado[]>(
+    initialItensCobrados.map((item) => ({ ...item }))
+  );
+  const [distribuicaoValue, setDistribuicaoValue] = useState<string>(
+    centsToCurrencyMask(initialDistribuicaoCentavos)
+  );
+  const [seloValue, setSeloValue] = useState<string>(
+    centsToCurrencyMask(initialSeloCentavos)
+  );
+
+  const itensCobradosRows = useMemo(
+    () => mapAtoItemsToGridRows(itensCobrados),
+    [itensCobrados]
+  );
+
+  const calculatedCustas = useMemo(
+    () =>
+      calculateCustasFromItems(
+        itensCobrados,
+        currencyToCents(distribuicaoValue),
+        currencyToCents(seloValue)
+      ),
+    [itensCobrados, distribuicaoValue, seloValue]
+  );
+
+  useEffect(() => {
+    onDraftChange({
+      itensCobrados,
+      distribuicaoCentavos: currencyToCents(distribuicaoValue),
+      seloCentavos: currencyToCents(seloValue),
+    });
+  }, [distribuicaoValue, itensCobrados, onDraftChange, seloValue]);
+
+  const handleAddSelectedRows = () => {
+    if (selectedTabelaRows.length === 0 || disabled) {
+      return;
+    }
+
+    setItensCobrados((previousItems) => {
+      const nextItems = [...previousItems];
+
+      for (const selectedRow of selectedTabelaRows) {
+        const existingIndex = nextItems.findIndex(
+          (item) => item.id === selectedRow.id
+        );
+
+        if (existingIndex >= 0) {
+          const currentItem = nextItems[existingIndex];
+          nextItems[existingIndex] = {
+            ...currentItem,
+            qtd: currentItem.qtd + 1,
+          };
+          continue;
+        }
+
+        nextItems.push(buildAtoItemFromTabelaRow(selectedRow));
+      }
+
+      return nextItems;
+    });
+
+    setSelectedTabelaRows([]);
+    setSelectedTabelaValues([]);
+  };
+
+  const handleIncreaseItemQtd = (itemId: number) => {
+    if (disabled) {
+      return;
+    }
+
+    setItensCobrados((previousItems) =>
+      previousItems.map((item) =>
+        item.id === itemId
+          ? {
+              ...item,
+              qtd: item.qtd + 1,
+            }
+          : item
+      )
+    );
+  };
+
+  const handleDecreaseItemQtd = (itemId: number) => {
+    if (disabled) {
+      return;
+    }
+
+    setItensCobrados((previousItems) =>
+      previousItems.map((item) => {
+        if (item.id !== itemId) {
+          return item;
+        }
+
+        return {
+          ...item,
+          qtd: Math.max(1, item.qtd - 1),
+        };
+      })
+    );
+  };
+
+  const handleRemoveItem = (itemId: number) => {
+    if (disabled) {
+      return;
+    }
+
+    setItensCobrados((previousItems) =>
+      previousItems.filter((item) => item.id !== itemId)
+    );
+  };
+
+  return (
+    <div className="custom-scrollbar max-h-[60vh] space-y-4 overflow-y-auto pr-1 pb-6">
+      <CardContainer
+        title="Tabela de Emolumentos - CGJ/RJ"
+        description="Selecione um ou mais itens e adicione ao ato"
+        columns={1}
+        collapsible={true}
+      >
+        <CustomSelectGrid<CustasTabelaRow>
+          selectionMode="multiple"
+          rows={custasTabelaRows}
+          rowIdKey="id"
+          value={selectedTabelaValues}
+          onChange={(values, rows) => {
+            setSelectedTabelaValues(values);
+            setSelectedTabelaRows(rows);
+          }}
+          density="compact"
+          roundedClassName="rounded-xl"
+          maxHeightClassName="max-h-56 min-h-56"
+          scrollViewportClassName="custom-scrollbar"
+          tableClassName="min-w-[860px]"
+          columns={[
+            {
+              key: 'tabela',
+              header: 'Tabela',
+              align: 'center',
+              widthClassName: 'w-16',
+            },
+            {
+              key: 'item',
+              header: 'Item',
+              align: 'center',
+              widthClassName: 'w-16',
+            },
+            {
+              key: 'subitem',
+              header: 'Subitem',
+              align: 'center',
+              widthClassName: 'w-20',
+            },
+            {
+              key: 'descricao',
+              header: 'Descricao',
+              align: 'left',
+              cellClassName: 'text-left',
+            },
+            {
+              key: 'valor',
+              header: 'Valor',
+              align: 'right',
+              widthClassName: 'w-32',
+            },
+          ]}
+        />
+
+        <div className="mt-3 flex justify-end">
+          <CustomButton
+            size="md"
+            title="Adicionar selecionados"
+            onClick={() => {
+              handleAddSelectedRows();
+            }}
+            disabled={disabled || selectedTabelaRows.length === 0}
+          />
+        </div>
+      </CardContainer>
+
+      <CardContainer title="Itens Cobrados no Ato" columns={1} collapsible={true}>
+        <CustomSelectGrid<CustasItensAtoRow>
+          rows={itensCobradosRows}
+          rowIdKey="id"
+          showSelectionColumn={false}
+          density="compact"
+          roundedClassName="rounded-xl"
+          maxHeightClassName="max-h-52 min-h-52"
+          scrollViewportClassName="custom-scrollbar"
+          tableClassName="min-w-[1080px]"
+          columns={[
+            {
+              key: 'tabela',
+              header: 'Tabela',
+              align: 'center',
+              widthClassName: 'w-16',
+            },
+            {
+              key: 'item',
+              header: 'Item',
+              align: 'center',
+              widthClassName: 'w-16',
+            },
+            {
+              key: 'subitem',
+              header: 'Subitem',
+              align: 'center',
+              widthClassName: 'w-20',
+            },
+            {
+              key: 'descricao',
+              header: 'Descricao',
+              align: 'left',
+              cellClassName: 'text-left',
+            },
+            {
+              key: 'valor',
+              header: 'Valor Unit.',
+              align: 'right',
+              widthClassName: 'w-32',
+            },
+            {
+              key: 'qtd',
+              header: 'Qtd.',
+              align: 'center',
+              widthClassName: 'w-36',
+              render: (row) => (
+                <div className="flex items-center justify-center gap-1">
+                  <button
+                    type="button"
+                    className="h-7 w-7 rounded-md bg-(--cor-edit) text-sm font-semibold text-(--cor-texto) ring-1 ring-(--cor-borda)/55 transition-all hover:bg-(--cor-button-hover)/20 dark:bg-(--dark-cor-edit) dark:text-(--dark-cor-texto) dark:ring-(--dark-cor-borda)/60 dark:hover:bg-(--dark-cor-button-hover)/25"
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      handleDecreaseItemQtd(row.id);
+                    }}
+                    disabled={disabled}
+                    aria-label="Diminuir quantidade"
+                  >
+                    -
+                  </button>
+
+                  <span className="min-w-7 text-center text-sm font-semibold">
+                    {row.qtd}
+                  </span>
+
+                  <button
+                    type="button"
+                    className="h-7 w-7 rounded-md bg-(--cor-edit) text-sm font-semibold text-(--cor-texto) ring-1 ring-(--cor-borda)/55 transition-all hover:bg-(--cor-button-hover)/20 dark:bg-(--dark-cor-edit) dark:text-(--dark-cor-texto) dark:ring-(--dark-cor-borda)/60 dark:hover:bg-(--dark-cor-button-hover)/25"
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      handleIncreaseItemQtd(row.id);
+                    }}
+                    disabled={disabled}
+                    aria-label="Aumentar quantidade"
+                  >
+                    +
+                  </button>
+                </div>
+              ),
+            },
+            {
+              key: 'total',
+              header: 'Total',
+              align: 'right',
+              widthClassName: 'w-32',
+            },
+            {
+              key: 'id',
+              header: 'Ação',
+              align: 'center',
+              widthClassName: 'w-20',
+              render: (row) => (
+                <button
+                  type="button"
+                  className="inline-flex h-7 w-7 items-center justify-center rounded-md bg-(--cor-edit) text-sm font-semibold text-(--cor-texto) ring-1 ring-(--cor-borda)/55 transition-all hover:bg-red-500/15 hover:text-red-600 dark:bg-(--dark-cor-edit) dark:text-(--dark-cor-texto) dark:ring-(--dark-cor-borda)/60 dark:hover:bg-red-400/20 dark:hover:text-red-400"
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    handleRemoveItem(row.id);
+                  }}
+                  disabled={disabled}
+                  aria-label="Remover item"
+                >
+                  x
+                </button>
+              ),
+            },
+          ]}
+        />
+      </CardContainer>
+
+      <CustasComposicaoCard
+        values={calculatedCustas.composicao}
+        disabled={disabled}
+        onManualFieldChange={(field, value) => {
+          if (field === 'distribuicao') {
+            setDistribuicaoValue(currencyMask(value));
+            return;
+          }
+
+          setSeloValue(currencyMask(value));
+        }}
+      />
+    </div>
   );
 };
 
@@ -511,135 +996,12 @@ const CustasComposicaoCard = ({
 export default function BalcaoPage() {
   const { openModal, openConfirm } = useModalManager();
 
-  const recibo = [
-    {
-      id: 1,
-      protocolo: '6000',
-      descricao: 'Registro de Titulo',
-      emolumentos: 'R$ 100,00',
-      fundos: 'R$ 100,00',
-      iss: 'R$ 100,00',
-      dist: 'R$ 100,00',
-      selo: 'R$ 100,00',
-      total: 'R$ 500,00',
-    },
-    {
-      id: 2,
-      protocolo: '7000',
-      descricao: 'Registro de Midia',
-      emolumentos: 'R$ 150,00',
-      fundos: 'R$ 100,00',
-      iss: 'R$ 100,00',
-      dist: 'R$ 100,00',
-      selo: 'R$ 100,00',
-      total: 'R$ 500,00',
-    },
-    {
-      id: 3,
-      protocolo: '8000',
-      descricao: 'Registro de Imóveis',
-      emolumentos: 'R$ 200,00',
-      fundos: 'R$ 100,00',
-      iss: 'R$ 100,00',
-      dist: 'R$ 100,00',
-      selo: 'R$ 100,00',
-      total: 'R$ 500,00',
-    },
-    {
-      id: 4,
-      protocolo: '9000',
-      descricao: 'Registro Civil de Pessoas Naturais',
-      emolumentos: 'R$ 250,00',
-      fundos: 'R$ 100,00',
-      iss: 'R$ 100,00',
-      dist: 'R$ 100,00',
-      selo: 'R$ 100,00',
-      total: 'R$ 500,00',
-    },
-    {
-      id: 5,
-      protocolo: '10000',
-      descricao: 'Registro de Contratos',
-      emolumentos: 'R$ 300,00',
-      fundos: 'R$ 100,00',
-      iss: 'R$ 100,00',
-      dist: 'R$ 100,00',
-      selo: 'R$ 100,00',
-      total: 'R$ 500,00',
-    },
-    {
-      id: 6,
-      protocolo: '11000',
-      descricao: 'Registro de Distribuição',
-      emolumentos: 'R$ 350,00',
-      fundos: 'R$ 100,00',
-      iss: 'R$ 100,00',
-      dist: 'R$ 100,00',
-      selo: 'R$ 100,00',
-      total: 'R$ 500,00',
-    },
-    {
-      id: 7,
-      protocolo: '12000',
-      descricao: 'Registro de Imóveis Rurais',
-      emolumentos: 'R$ 400,00',
-      fundos: 'R$ 100,00',
-      iss: 'R$ 100,00',
-      dist: 'R$ 100,00',
-      selo: 'R$ 100,00',
-      total: 'R$ 500,00',
-    },
-    {
-      id: 8,
-      protocolo: '13000',
-      descricao: 'Registro de Imóveis Urbanos',
-      emolumentos: 'R$ 450,00',
-      fundos: 'R$ 100,00',
-      iss: 'R$ 100,00',
-      dist: 'R$ 100,00',
-      selo: 'R$ 100,00',
-      total: 'R$ 500,00',
-    },
-    {
-      id: 9,
-      protocolo: '14000',
-      descricao: 'Registro de Imóveis Especiais',
-      emolumentos: 'R$ 500,00',
-      fundos: 'R$ 100,00',
-      iss: 'R$ 100,00',
-      dist: 'R$ 100,00',
-      selo: 'R$ 100,00',
-      total: 'R$ 500,00',
-    },
-    {
-      id: 10,
-      protocolo: '15000',
-      descricao: 'Registro de Títulos e Documentos',
-      emolumentos: 'R$ 550,00',
-      fundos: 'R$ 100,00',
-      iss: 'R$ 100,00',
-      dist: 'R$ 100,00',
-      selo: 'R$ 100,00',
-      total: 'R$ 500,00',
-    },
-    {
-      id: 11,
-      protocolo: '16000',
-      descricao: 'Registro de Protestos',
-      emolumentos: 'R$ 550,00',
-      fundos: 'R$ 100,00',
-      iss: 'R$ 100,00',
-      dist: 'R$ 100,00',
-      selo: 'R$ 100,00',
-      total: 'R$ 500,00',
-    },
-  ];
-
   const {
     control,
-    handleSubmit,
     reset,
     resetField,
+    trigger,
+    getValues,
     watch,
     formState: { errors },
   } = useForm<FormInputValues, unknown, FormValues>({
@@ -653,169 +1015,227 @@ export default function BalcaoPage() {
     delayError: 200,
   });
 
-  const onSubmit: SubmitHandler<FormValues> = (data) => {
-    // Converte o valor monetario mascarado para numero bruto, util para backend e calculos.
-    const payload = {
-      ...data,
-      ato: {
-        ...data.ato,
-        valorDocumentoNumerico: getNumericValue(data.ato.valorDocumento),
-      },
-    };
-
-    console.log(payload);
-  };
-
   const documentoDigitsLength = watch('documento').length;
   const contatoDigitsLength = watch('contato').length;
 
   const [servicosSearchTerm, setServicosSearchTerm] = useState('');
   const [selectedIds, setSelectedIds] = useState<SelectGridValue[]>([]);
-  const [custasValues, setCustasValues] =
-    useState<CustasValues>(custasDefaultValues);
+  const [atosSalvos, setAtosSalvos] = useState<AtoSalvo[]>([]);
+  const [nextAtoId, setNextAtoId] = useState(1);
 
-  const handleOpenCustasModal = async () => {
-    // O modal abre em modo alerta com conteudo customizado; bloqueio evita concorrencia de modais.
+  const clearAllFormAndLocalState = () => {
+    reset(balcaoDefaultValues);
+    setServicosSearchTerm('');
+    setSelectedIds([]);
+    setAtosSalvos([]);
+    setNextAtoId(1);
+  };
+
+  const showAlert = async (title: string, description: string) => {
     const result = await openModal({
       kind: 'alert',
-      title: 'Custas',
+      title,
+      description,
+      confirmLabel: 'Entendi',
+      showCloseButton: true,
+    });
+
+    if (result.status === 'blocked') {
+      console.info(
+        '[Balcao] Modal de alerta bloqueado: ja existe um modal aberto.'
+      );
+    }
+  };
+
+  const selectedAtoId =
+    selectedIds.length > 0 ? Number(selectedIds[0]) : null;
+
+  const reciboRows = useMemo<ReciboRow[]>(() => {
+    return atosSalvos.map((ato) => {
+      const fundosCentavos = fundosFieldKeys.reduce(
+        (accumulator, field) =>
+          accumulator + getCustasFieldCentavos(ato.custas.composicao, field),
+        0
+      );
+
+      return {
+        id: ato.id,
+        protocolo: ato.informacoesAto.protocolo,
+        descricao:
+          ato.informacoesAto.servicos.map((servico) => servico.label).join(' | ') ||
+          'Ato sem servico vinculado',
+        emolumentos: ato.custas.composicao.emolumentos,
+        fundos: centsToCurrencyMask(fundosCentavos),
+        iss: ato.custas.composicao.iss,
+        dist: ato.custas.composicao.distribuicao,
+        selo: ato.custas.composicao.selo,
+        total: centsToCurrencyMask(ato.custas.totalCentavos),
+        totalCentavos: ato.custas.totalCentavos,
+      };
+    });
+  }, [atosSalvos]);
+
+  const totalReciboCentavos = useMemo(
+    () =>
+      reciboRows.reduce(
+        (accumulator, currentRow) => accumulator + currentRow.totalCentavos,
+        0
+      ),
+    [reciboRows]
+  );
+
+  const quantidadeServicos = useMemo(
+    () =>
+      atosSalvos.reduce(
+        (accumulator, currentAto) =>
+          accumulator + currentAto.informacoesAto.servicos.length,
+        0
+      ),
+    [atosSalvos]
+  );
+
+  const handleSaveAto = async () => {
+    const isValid = await trigger([
+      'tipoEntrada',
+      'natureza',
+      'tipoCobranca',
+      'ato.valorDocumento',
+      'ato.protocolo',
+      'ato.dataEntrada',
+      'ato.servicos',
+      'ato.quantidade',
+      'ato.nomes',
+      'ato.paginas',
+      'ato.vias',
+      'ato.diligencias',
+    ]);
+
+    if (!isValid) {
+      return;
+    }
+
+    const values = getValues();
+    if (
+      values.tipoEntrada === null ||
+      values.natureza === null ||
+      values.tipoCobranca === null
+    ) {
+      return;
+    }
+
+    const newAtoId = nextAtoId;
+    const servicosSelecionados: ServicoSelecionado[] = values.ato.servicos.map(
+      (serviceValue) => {
+        const matchedService = servicosOptions.find(
+          (serviceOption) =>
+            String(serviceOption.value) === String(serviceValue)
+        );
+
+        return {
+          value: serviceValue,
+          label: String(matchedService?.label ?? serviceValue),
+          description: String(matchedService?.description ?? ''),
+        };
+      }
+    );
+
+    const newAto: AtoSalvo = {
+      id: newAtoId,
+      tipoEntrada: values.tipoEntrada,
+      natureza: values.natureza,
+      tipoCobranca: values.tipoCobranca,
+      informacoesAto: {
+        valorDocumento: values.ato.valorDocumento,
+        valorDocumentoNumerico: getNumericValue(values.ato.valorDocumento),
+        protocolo: values.ato.protocolo,
+        dataEntrada: values.ato.dataEntrada,
+        servicos: servicosSelecionados,
+        quantidade: values.ato.quantidade,
+        nomes: values.ato.nomes,
+        paginas: values.ato.paginas,
+        vias: values.ato.vias,
+        diligencias: values.ato.diligencias,
+      },
+      custas: createEmptyAtoCustas(),
+    };
+
+    setAtosSalvos((previousAtos) => [...previousAtos, newAto]);
+    setSelectedIds([newAtoId]);
+    setNextAtoId((previousId) => previousId + 1);
+    reset({
+      ...values,
+      tipoEntrada: null,
+      natureza: null,
+      tipoCobranca: null,
+      ato: {
+        ...balcaoDefaultValues.ato,
+      },
+    });
+    setServicosSearchTerm('');
+  };
+
+  const handleOpenCustasModal = async () => {
+    if (selectedAtoId === null) {
+      await showAlert(
+        'Selecione um ato',
+        'Escolha um ato na grade de recibo para editar as custas.'
+      );
+      return;
+    }
+
+    const targetAto = atosSalvos.find((ato) => ato.id === selectedAtoId);
+    if (!targetAto) {
+      setSelectedIds([]);
+      await showAlert(
+        'Ato não encontrado',
+        'A seleção atual não corresponde a um ato válido. Selecione novamente.'
+      );
+      return;
+    }
+
+    let stagedDraft: CustasModalDraft = {
+      itensCobrados: targetAto.custas.itensCobrados.map((item) => ({ ...item })),
+      distribuicaoCentavos: currencyToCents(targetAto.custas.composicao.distribuicao),
+      seloCentavos: currencyToCents(targetAto.custas.composicao.selo),
+    };
+
+    const result = await openModal<AtoCustas>({
+      kind: 'custom',
+      title: `Custas - Protocolo ${targetAto.informacoesAto.protocolo}`,
       size: 'lg',
       className: 'max-h-[90vh] max-w-[min(96vw,1280px)] overflow-auto',
-      confirmLabel: 'Fechar',
+      confirmLabel: 'Salvar custas',
+      cancelLabel: 'Cancelar',
       showCloseButton: true,
-      renderContent: () => (
-        <div className="custom-scrollbar max-h-[60vh] space-y-4 overflow-y-auto pr-1 pb-6">
-          
-          {/* Tabela de Emolumentos */}
-          <CardContainer
-            title="Tabela de Emolumentos - CGJ/RJ"
-            description="Consulta de referencia"
-            columns={1}
-            collapsible={true}
-          >
-            <CustomSelectGrid<CustasTabelaRow>
-              // readOnly={true}
-              maxSelected={1}
-              rows={custasTabelaRows}
-              rowIdKey="id"
-              showSelectionColumn={false}
-              density="compact"
-              roundedClassName="rounded-xl"
-              maxHeightClassName="max-h-56 min-h-56"
-              scrollViewportClassName="custom-scrollbar"
-              tableClassName="min-w-[860px]"
-              columns={[
-                {
-                  key: 'tabela',
-                  header: 'Tabela',
-                  align: 'center',
-                  widthClassName: 'w-16',
-                },
-                {
-                  key: 'item',
-                  header: 'Item',
-                  align: 'center',
-                  widthClassName: 'w-16',
-                },
-                {
-                  key: 'subitem',
-                  header: 'Subitem',
-                  align: 'center',
-                  widthClassName: 'w-20',
-                },
-                {
-                  key: 'descricao',
-                  header: 'Descricao',
-                  align: 'left',
-                  cellClassName: 'text-left',
-                },
-                {
-                  key: 'valor',
-                  header: 'Valor',
-                  align: 'right',
-                  widthClassName: 'w-32',
-                },
-              ]}
-            />
-          </CardContainer>
-          
-          {/* Itens Cobrados no Ato */}
-          <CardContainer
-            title="Itens Cobrados no Ato"
-            columns={1}
-            collapsible={true}
-          >
-            <h3 className="text-sm font-semibold text-(--titulos) dark:text-(--dark-titulos)">
-              Itens Cobrados no Ato
-            </h3>
+      disableBackdropClose: true,
+      showDefaultActions: true,
+      onConfirm: () => {
+        const calculatedCustas = calculateCustasFromItems(
+          stagedDraft.itensCobrados,
+          stagedDraft.distribuicaoCentavos,
+          stagedDraft.seloCentavos
+        );
 
-            <CustomSelectGrid<CustasItensAtoRow>
-              // readOnly={true}
-
-              rows={custasItensAtoRows}
-              rowIdKey="id"
-              showSelectionColumn={false}
-              density="compact"
-              roundedClassName="rounded-xl"
-              maxHeightClassName="max-h-44 min-h-44"
-              scrollViewportClassName="custom-scrollbar"
-              tableClassName="min-w-[960px]"
-              columns={[
-                {
-                  key: 'tabela',
-                  header: 'Tabela',
-                  align: 'center',
-                  widthClassName: 'w-16',
-                },
-                {
-                  key: 'item',
-                  header: 'Item',
-                  align: 'center',
-                  widthClassName: 'w-16',
-                },
-                {
-                  key: 'subitem',
-                  header: 'Subitem',
-                  align: 'center',
-                  widthClassName: 'w-20',
-                },
-                {
-                  key: 'descricao',
-                  header: 'Descricao',
-                  align: 'left',
-                  cellClassName: 'text-left',
-                },
-                {
-                  key: 'valor',
-                  header: 'Valor',
-                  align: 'right',
-                  widthClassName: 'w-32',
-                },
-                {
-                  key: 'qtd',
-                  header: 'Qtd.',
-                  align: 'center',
-                  widthClassName: 'w-16',
-                },
-                {
-                  key: 'total',
-                  header: 'Total',
-                  align: 'right',
-                  widthClassName: 'w-32',
-                },
-              ]}
-            />
-          </CardContainer>
-          
-          <CustasComposicaoCard
-            initialValues={custasValues}
-            editable={ENABLE_EDITABLE_CUSTAS_FIELDS_IN_MODAL}
-            onValuesChange={(nextValues) => {
-              setCustasValues(nextValues);
-            }}
-          />
-
-        </div>
+        return {
+          itensCobrados: stagedDraft.itensCobrados,
+          composicao: calculatedCustas.composicao,
+          totalCentavos: calculatedCustas.totalCentavos,
+        };
+      },
+      renderContent: (controls) => (
+        <CustasModalContent
+          initialItensCobrados={stagedDraft.itensCobrados}
+          initialDistribuicaoCentavos={stagedDraft.distribuicaoCentavos}
+          initialSeloCentavos={stagedDraft.seloCentavos}
+          disabled={controls.isSubmitting}
+          onDraftChange={(nextDraft) => {
+            stagedDraft = {
+              itensCobrados: nextDraft.itensCobrados.map((item) => ({ ...item })),
+              distribuicaoCentavos: nextDraft.distribuicaoCentavos,
+              seloCentavos: nextDraft.seloCentavos,
+            };
+          }}
+        />
       ),
     });
 
@@ -823,7 +1243,59 @@ export default function BalcaoPage() {
       console.info(
         '[Balcao] Modal de Custas bloqueado: ja existe um modal aberto.'
       );
+      return;
     }
+
+    if (result.status !== 'confirmed' || !result.data) {
+      return;
+    }
+
+    const modalData = result.data;
+
+    setAtosSalvos((previousAtos) =>
+      previousAtos.map((ato) =>
+        ato.id === targetAto.id
+          ? {
+              ...ato,
+              custas: {
+                itensCobrados: modalData.itensCobrados.map((item) => ({
+                  ...item,
+                })),
+                composicao: modalData.composicao,
+                totalCentavos: modalData.totalCentavos,
+              },
+            }
+          : ato
+      )
+    );
+  };
+
+  const handleClearSelectedAto = async () => {
+    if (selectedAtoId === null) {
+      await showAlert(
+        'Selecione um ato',
+        'Escolha um ato na grade para remover do recibo.'
+      );
+      return;
+    }
+
+    const confirmed = await openConfirm({
+      title: 'Remover ato selecionado?',
+      description: 'Essa ação remove apenas o ato selecionado da descrição do recibo.',
+      confirmLabel: 'Sim, remover ato',
+      cancelLabel: 'Cancelar',
+      showCloseButton: true,
+      disableBackdropClose: true,
+    });
+
+    if (!confirmed) {
+      return;
+    }
+
+    setAtosSalvos((previousAtos) =>
+      previousAtos.filter((ato) => ato.id !== selectedAtoId)
+    );
+    setSelectedIds([]);
   };
 
   const handleClearAll = async () => {
@@ -842,9 +1314,7 @@ export default function BalcaoPage() {
     }
 
     // Limpa tanto o formulario quanto estados locais fora do react-hook-form.
-    reset(balcaoDefaultValues);
-    setServicosSearchTerm('');
-    setSelectedIds([]);
+    clearAllFormAndLocalState();
   };
 
   const handleClearApresentante = async () => {
@@ -871,8 +1341,28 @@ export default function BalcaoPage() {
     resetField('horarioUrgencia');
   };
 
-  const handleSubmitWithConfirmation = handleSubmit(async (data) => {
-    // Segunda barreira de seguranca para evitar envio acidental.
+  const handleFinalize = async () => {
+    const isApresentanteValid = await trigger([
+      'documento',
+      'contato',
+      'nome',
+      'email',
+      'observacao',
+      'horarioUrgencia',
+    ]);
+
+    if (!isApresentanteValid) {
+      return;
+    }
+
+    if (atosSalvos.length === 0) {
+      await showAlert(
+        'Nenhum ato salvo',
+        'Adicione ao menos um ato antes de finalizar o envio.'
+      );
+      return;
+    }
+
     const confirmed = await openConfirm({
       title: 'Confirmar envio?',
       description:
@@ -887,8 +1377,102 @@ export default function BalcaoPage() {
       return;
     }
 
-    onSubmit(data);
-  });
+    const formValues = getValues();
+
+    const payload = {
+      apresentante: {
+        documento: formValues.documento,
+        contato: formValues.contato,
+        nome: formValues.nome,
+        email: formValues.email,
+        observacao: formValues.observacao,
+        horarioUrgencia: formValues.horarioUrgencia,
+        atos: atosSalvos.map((ato) => {
+          const composicaoComCentavos = Object.fromEntries(
+            Object.entries(ato.custas.composicao).map(([key, value]) => [
+              key,
+              {
+                valor: value,
+                centavos: currencyToCents(value),
+              },
+            ])
+          );
+
+          return {
+            id: ato.id,
+            tipoEntrada: {
+              value: ato.tipoEntrada,
+              label: resolveOptionLabel(tipoEntradaOptions, ato.tipoEntrada),
+            },
+            natureza: {
+              value: ato.natureza,
+              label: resolveOptionLabel(naturezaOptions, ato.natureza),
+            },
+            tipoCobranca: {
+              value: ato.tipoCobranca,
+              label: resolveOptionLabel(tipoCobrancaOptions, ato.tipoCobranca),
+            },
+            informacoesAto: {
+              ...ato.informacoesAto,
+              servicos: ato.informacoesAto.servicos.map((servico) => ({
+                value: servico.value,
+                label: servico.label,
+                description: servico.description,
+              })),
+            },
+            custas: {
+              itensCobrados: ato.custas.itensCobrados.map((item) => {
+                const totalCentavos = item.valorUnitarioCentavos * item.qtd;
+                return {
+                  id: item.id,
+                  tabela: item.tabela,
+                  item: item.item,
+                  subitem: item.subitem,
+                  descricao: item.descricao,
+                  qtd: item.qtd,
+                  valorUnitarioCentavos: item.valorUnitarioCentavos,
+                  valorUnitario: centsToCurrencyMask(item.valorUnitarioCentavos),
+                  totalCentavos,
+                  total: centsToCurrencyMask(totalCentavos),
+                };
+              }),
+              composicao: composicaoComCentavos,
+              totalCentavos: ato.custas.totalCentavos,
+              total: centsToCurrencyMask(ato.custas.totalCentavos),
+            },
+          };
+        }),
+      },
+    };
+
+    const payloadFormatado = JSON.stringify(payload, null, 2);
+
+    const result = await openModal({
+      kind: 'alert',
+      title: 'Objeto completo da finalização',
+      description:
+        'Visualização temporária do payload montado antes da integração com a API.',
+      confirmLabel: 'Fechar',
+      showCloseButton: true,
+      size: 'lg',
+      className: 'max-h-[90vh] max-w-[min(96vw,1280px)] overflow-auto',
+      renderContent: () => (
+        <div className="custom-scrollbar max-h-[60vh] overflow-auto rounded-xl bg-(--cor-edit) p-4 ring-1 ring-(--cor-borda)/60 dark:bg-(--dark-cor-edit) dark:ring-(--dark-cor-borda)/65">
+          <pre className="whitespace-pre-wrap wrap-break-word text-xs leading-relaxed text-(--cor-texto) dark:text-(--dark-cor-texto)">
+            {payloadFormatado}
+          </pre>
+        </div>
+      ),
+    });
+
+    if (result.status === 'blocked') {
+      console.info(
+        '[Balcao] Modal de payload bloqueado: ja existe um modal aberto.'
+      );
+    }
+
+    clearAllFormAndLocalState();
+  };
 
   const filteredServicosOptions = useMemo(() => {
     // Busca tolerante a acentos para melhorar experiencia ao filtrar servicos.
@@ -911,7 +1495,9 @@ export default function BalcaoPage() {
     <PageTitle title="Balcão" description="Gerencie lançamentos de balcão">
       {/* Formulário de apresentantes */}
       <form
-        onSubmit={handleSubmitWithConfirmation}
+        onSubmit={(event) => {
+          event.preventDefault();
+        }}
         className="col-span-full space-y-4"
         noValidate
       >
@@ -1285,7 +1871,7 @@ export default function BalcaoPage() {
               <CustomSelectData
                 className="custom-scrollbar max-h-60 min-h-60 overflow-auto sm:grid-cols-1 md:grid-cols-2"
                 label="Serviços"
-                maxSelected={1}
+                
                 items={filteredServicosOptions}
                 error={errors.ato?.servicos?.message}
                 value={field.value}
@@ -1418,9 +2004,11 @@ export default function BalcaoPage() {
           <div className="flex justify-end">
             <CustomButton
               size="lg"
-              type="submit"
-              title="Salvar"
-              onClick={() => console.log('Valores do formulario: ', watch())}
+              type="button"
+              title="Salvar Ato"
+              onClick={() => {
+                void handleSaveAto();
+              }}
             />
           </div>
         </CardContainer>
@@ -1439,7 +2027,9 @@ export default function BalcaoPage() {
               title="Limpar"
               icon={<CloseLineIcon className="size-5" />}
               aria-label="Fechar descrição"
-              onClick={() => console.log('Gerar descrição automática')}
+              onClick={() => {
+                void handleClearSelectedAto();
+              }}
             />
 
             <CustomButton
@@ -1454,13 +2044,12 @@ export default function BalcaoPage() {
           </div>
 
           <CustomSelectGrid
-            showSelectionColumn={false}
-            // selectionMode="single"
+            showSelectionColumn={true}
+            selectionMode="single"
             maxSelected={1}
             maxHeightClassName="max-h-80 min-h-80"
             scrollViewportClassName="custom-scrollbar"
-            // roundedClassName="rounded-xl"
-            rows={recibo}
+            rows={reciboRows}
             columns={[
               {
                 key: 'protocolo',
@@ -1523,28 +2112,20 @@ export default function BalcaoPage() {
             <div className="flex">
               <CustomButton
                 size="lg"
-                type="submit"
+                type="button"
                 title="Finalizar"
-                onClick={() => console.log('Valores do formulario: ', watch())}
+                onClick={() => {
+                  void handleFinalize();
+                }}
               />
             </div>
 
             <div className="text-end">
               <h1 className="text-xl font-bold">
-                Total: R${' '}
-                {recibo
-                  .reduce(
-                    (sum, item) =>
-                      sum +
-                      parseFloat(
-                        item.total.replace('R$ ', '').replace(',', '.')
-                      ),
-                    0
-                  )
-                  .toFixed(2)}
+                Total: {centsToCurrencyMask(totalReciboCentavos)}
               </h1>
               <h2 className="text-lg font-light opacity-95">
-                Quantidade de serviços: {recibo.length}
+                Quantidade de serviços: {quantidadeServicos}
               </h2>
             </div>
           </div>
