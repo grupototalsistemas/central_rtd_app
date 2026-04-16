@@ -424,6 +424,84 @@ const balcaoDefaultValues: FormInputValues = {
   },
 };
 
+// Alteracao pontual e facil de reverter: basta trocar para `false`.
+const ENABLE_EDITABLE_CUSTAS_FIELDS_IN_MODAL = true;
+
+interface CustasComposicaoCardProps {
+  initialValues: CustasValues;
+  editable: boolean;
+  onValuesChange: (nextValues: CustasValues) => void;
+}
+
+const CustasComposicaoCard = ({
+  initialValues,
+  editable,
+  onValuesChange,
+}: CustasComposicaoCardProps) => {
+  const [localValues, setLocalValues] = useState<CustasValues>(initialValues);
+
+  const localTotal = useMemo(
+    () =>
+      Object.values(localValues).reduce(
+        (accumulator, currentValue) =>
+          accumulator + getNumericValue(currentValue),
+        0
+      ),
+    [localValues]
+  );
+
+  const handleLocalFieldChange = (
+    fieldKey: CustasFieldKey,
+    inputValue: string
+  ) => {
+    if (!editable) {
+      return;
+    }
+
+    setLocalValues((previousValues) => {
+      const nextValues = {
+        ...previousValues,
+        [fieldKey]: currencyMask(inputValue),
+      };
+
+      onValuesChange(nextValues);
+      return nextValues;
+    });
+  };
+
+  return (
+    <CardContainer title="Composição das Custas" columns={1} collapsible={true}>
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-4">
+        {custasFieldDefinitions.map((fieldDefinition) => (
+          <CustomInput
+            key={fieldDefinition.key}
+            label={fieldDefinition.label}
+            placeholder={fieldDefinition.placeholder}
+            autoComplete="off"
+            inputMode="numeric"
+            readOnly={!editable}
+            value={localValues[fieldDefinition.key]}
+            onChange={(event: React.ChangeEvent<HTMLInputElement>) => {
+              handleLocalFieldChange(fieldDefinition.key, event.target.value);
+            }}
+          />
+        ))}
+      </div>
+
+      <div className="grid grid-cols-1 gap-3 sm:max-w-sm">
+        <CustomInput
+          label="Total"
+          value={formatCurrencyValue(localTotal)}
+          readOnly={true}
+          className="font-semibold"
+          leftAdornment={<CurrencyDollarIcon className="size-4" />}
+          hint="Valor consolidado automaticamente pela soma dos campos."
+        />
+      </div>
+    </CardContainer>
+  );
+};
+
 /**
  * Pagina de Balcao:
  * - Usa react-hook-form + Zod para validar e normalizar dados.
@@ -596,27 +674,6 @@ export default function BalcaoPage() {
   const [custasValues, setCustasValues] =
     useState<CustasValues>(custasDefaultValues);
 
-  // Soma memoizada para recalcular apenas quando algum campo de custas mudar.
-  const custasTotal = useMemo(
-    () =>
-      Object.values(custasValues).reduce(
-        (accumulator, currentValue) =>
-          accumulator + getNumericValue(currentValue),
-        0
-      ),
-    [custasValues]
-  );
-
-  const handleCustasFieldChange = (
-    fieldKey: CustasFieldKey,
-    inputValue: string
-  ) => {
-    setCustasValues((previousValues) => ({
-      ...previousValues,
-      [fieldKey]: currencyMask(inputValue),
-    }));
-  };
-
   const handleOpenCustasModal = async () => {
     // O modal abre em modo alerta com conteudo customizado; bloqueio evita concorrencia de modais.
     const result = await openModal({
@@ -750,42 +807,13 @@ export default function BalcaoPage() {
             />
           </CardContainer>
           
-          {/* Composição das Custas */}
-          <CardContainer
-            title="Composição das Custas"
-            columns={1}
-            collapsible={true}
-          >
-            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-4">
-              {custasFieldDefinitions.map((fieldDefinition) => (
-                <CustomInput
-                  key={fieldDefinition.key}
-                  label={fieldDefinition.label}
-                  placeholder={fieldDefinition.placeholder}
-                  autoComplete="off"
-                  inputMode="numeric"
-                  value={custasValues[fieldDefinition.key]}
-                  onChange={(event: React.ChangeEvent<HTMLInputElement>) => {
-                    handleCustasFieldChange(
-                      fieldDefinition.key,
-                      event.target.value
-                    );
-                  }}
-                />
-              ))}
-            </div>
-
-            <div className="grid grid-cols-1 gap-3 sm:max-w-sm">
-              <CustomInput
-                label="Total"
-                value={formatCurrencyValue(custasTotal)}
-                readOnly={true}
-                className="font-semibold"
-                leftAdornment={<CurrencyDollarIcon className="size-4" />}
-                hint="Valor consolidado automaticamente pela soma dos campos."
-              />
-            </div>
-          </CardContainer>
+          <CustasComposicaoCard
+            initialValues={custasValues}
+            editable={ENABLE_EDITABLE_CUSTAS_FIELDS_IN_MODAL}
+            onValuesChange={(nextValues) => {
+              setCustasValues(nextValues);
+            }}
+          />
 
         </div>
       ),
