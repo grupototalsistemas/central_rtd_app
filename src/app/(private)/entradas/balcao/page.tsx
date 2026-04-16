@@ -1492,7 +1492,7 @@ export default function BalcaoPage() {
   }, [servicosSearchTerm]);
 
   return (
-    <PageTitle title="Balcão" description="Gerencie lançamentos de balcão">
+    <PageTitle title="Balcão" description="Lançamentos">
       {/* Formulário de apresentantes */}
       <form
         onSubmit={(event) => {
@@ -1524,7 +1524,6 @@ export default function BalcaoPage() {
         {/* Apresentante */}
         <CardContainer
           title="Apresentante"
-          description="Insira informações do apresentante."
           columns={1}
           collapsible={true}
         >
@@ -1777,7 +1776,6 @@ export default function BalcaoPage() {
         {/* Informação do Ato */}
         <CardContainer
           title="Informação do Ato"
-          description="Insira informações sobre o ato"
           collapsible={true}
           columns={1}
         >
@@ -2016,7 +2014,6 @@ export default function BalcaoPage() {
         {/* Desrição do recibo */}
         <CardContainer
           title="Descrição do Recibo"
-          description="Descrição detalhada do recibo."
           collapsible={true}
           columns={1}
         >
