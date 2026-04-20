@@ -267,6 +267,15 @@ const headerButtonAlignClassMap: Record<
 	right: 'justify-end text-right',
 };
 
+const headerCellAlignClassMap: Record<
+	NonNullable<CustomSelectGridColumn<Record<string, unknown>>['align']>,
+	string
+> = {
+	left: 'text-left',
+	center: 'text-center',
+	right: 'text-right',
+};
+
 const getSortAriaValue = (
 	isActive: boolean,
 	direction?: CustomSelectGridSortDirection
@@ -891,7 +900,7 @@ const CustomSelectGrid = React.forwardRef(
 											<th
 												scope="col"
 												className={cn(
-													'w-10 px-3 py-2 text-left text-xs font-semibold uppercase tracking-[0.05em] text-gray-500 dark:text-gray-400',
+													'w-10 px-3 py-2 text-left text-xs font-semibold tracking-[0.05em] text-gray-500 dark:text-gray-400',
 													headerCellClassName
 												)}
 											>
@@ -913,7 +922,8 @@ const CustomSelectGrid = React.forwardRef(
 													scope="col"
 													aria-sort={getSortAriaValue(isActiveSort, sortDirection)}
 													className={cn(
-														'px-3 py-2 text-xs font-semibold uppercase tracking-[0.05em] text-gray-500 dark:text-gray-300',
+														'px-3 py-2 text-xs font-semibold tracking-[0.05em] text-gray-500 dark:text-gray-300',
+														headerCellAlignClassMap[align],
 														column.widthClassName,
 														headerCellClassName,
 														column.headerClassName
@@ -939,7 +949,7 @@ const CustomSelectGrid = React.forwardRef(
 														<span
 															className={cn(
 																'inline-flex w-full items-center truncate px-1 py-1',
-																headerButtonAlignClassMap[align]
+																headerButtonAlignClassMap[align] 
 															)}
 														>
 															{column.header}

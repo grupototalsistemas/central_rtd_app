@@ -1,12 +1,12 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { zodResolver } from '@hookform/resolvers/zod';
 import CardContainer from '@/components/card/CardContainer';
 import CustomInput from '@/components/inputs/CustomInput';
 import PageTitle from '@/components/page/PageTitle';
 import { formatCpfCnpj, validarCpfCnpj } from '@/utils/formatCpfCnpj';
-import { Controller, useForm } from 'react-hook-form';
+import { Controller, type FieldPath, useForm } from 'react-hook-form';
 import { z } from 'zod';
 import CustomTextbox from '@/components/inputs/CustomTextbox';
 import CustomSelect from '@/components/inputs/CustomSelect';
@@ -457,8 +457,22 @@ const balcaoFormSchema = z.object({
 
 type FormInputValues = z.input<typeof balcaoFormSchema>;
 type FormValues = z.output<typeof balcaoFormSchema>;
+type EnterNavigableFieldName =
+  | FieldPath<FormInputValues>
+  | 'servicosSearchInput';
 
-const balcaoDefaultValues: FormInputValues = {
+const getCurrentDateBr = (): string => {
+  const dateFormatter = new Intl.DateTimeFormat('pt-BR', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+    timeZone: 'America/Sao_Paulo',
+  });
+
+  return dateFormatter.format(new Date());
+};
+
+const createBalcaoDefaultValues = (): FormInputValues => ({
   documento: '',
   contato: '',
   nome: '',
@@ -471,7 +485,7 @@ const balcaoDefaultValues: FormInputValues = {
   ato: {
     valorDocumento: currencyMask('0'),
     protocolo: '',
-    dataEntrada: '',
+    dataEntrada: getCurrentDateBr(),
     servicos: [],
     quantidade: 1,
     nomes: 0,
@@ -479,7 +493,36 @@ const balcaoDefaultValues: FormInputValues = {
     vias: 0,
     diligencias: 0,
   },
-};
+});
+
+// Ordem de navegação por Enter no formulário principal.
+// A pesquisa entra como destino após Data da Entrada; Enter nela é neutro.
+// Grids ficam fora para preservar atalhos nativos desses componentes.
+const enterNavigationFieldOrder: EnterNavigableFieldName[] = [
+  'documento',
+  'nome',
+  'contato',
+  'email',
+  'horarioUrgencia',
+  'observacao',
+  'tipoEntrada',
+  'natureza',
+  'tipoCobranca',
+  'ato.valorDocumento',
+  'ato.protocolo',
+  'ato.dataEntrada',
+  'servicosSearchInput',
+  'ato.quantidade',
+  'ato.nomes',
+  'ato.paginas',
+  'ato.vias',
+  'ato.diligencias',
+];
+
+const isFormFieldPath = (
+  fieldName: EnterNavigableFieldName
+): fieldName is FieldPath<FormInputValues> =>
+  fieldName !== 'servicosSearchInput';
 
 const centsToCurrencyMask = (valueInCents: number): string =>
   currencyMask(String(Math.max(0, valueInCents)));
@@ -1000,6 +1043,7 @@ export default function BalcaoPage() {
     control,
     reset,
     resetField,
+    setFocus,
     trigger,
     getValues,
     watch,
@@ -1008,7 +1052,7 @@ export default function BalcaoPage() {
     // Mantem tipagem alinhada com entrada e saida do schema (inclui transforms do Zod).
     // Zod concentra as regras de validação e saneamento final antes do submit.
     resolver: zodResolver(balcaoFormSchema),
-    defaultValues: balcaoDefaultValues,
+    defaultValues: createBalcaoDefaultValues(),
     // Primeira validação ao tocar/sair do campo e, depois disso, revalida em cada mudança.
     mode: 'onTouched',
     reValidateMode: 'onChange',
@@ -1022,9 +1066,10 @@ export default function BalcaoPage() {
   const [selectedIds, setSelectedIds] = useState<SelectGridValue[]>([]);
   const [atosSalvos, setAtosSalvos] = useState<AtoSalvo[]>([]);
   const [nextAtoId, setNextAtoId] = useState(1);
+  const servicosSearchInputRef = useRef<HTMLInputElement | null>(null);
 
   const clearAllFormAndLocalState = () => {
-    reset(balcaoDefaultValues);
+    reset(createBalcaoDefaultValues());
     setServicosSearchTerm('');
     setSelectedIds([]);
     setAtosSalvos([]);
@@ -1094,6 +1139,67 @@ export default function BalcaoPage() {
     [atosSalvos]
   );
 
+  const moveFocusByEnter = async (
+    currentField: EnterNavigableFieldName,
+    direction: 'next' | 'previous'
+  ) => {
+    const currentIndex = enterNavigationFieldOrder.indexOf(currentField);
+
+    if (currentIndex < 0) {
+      return;
+    }
+
+    if (direction === 'next' && isFormFieldPath(currentField)) {
+      // Enter avança apenas quando o campo atual estiver válido.
+      const isCurrentFieldValid = await trigger(currentField);
+
+      if (!isCurrentFieldValid) {
+        return;
+      }
+    }
+
+    const targetIndex =
+      direction === 'next' ? currentIndex + 1 : currentIndex - 1;
+
+    if (
+      targetIndex < 0 ||
+      targetIndex >= enterNavigationFieldOrder.length
+    ) {
+      return;
+    }
+
+    const targetField = enterNavigationFieldOrder[targetIndex];
+
+    if (targetField === 'servicosSearchInput') {
+      servicosSearchInputRef.current?.focus();
+      return;
+    }
+
+    setFocus(targetField);
+  };
+
+  const handleInputEnterNavigation =
+    (fieldName: EnterNavigableFieldName) =>
+    (event: React.KeyboardEvent<HTMLInputElement>) => {
+      if (event.key !== 'Enter') {
+        return;
+      }
+
+      if (event.altKey || event.ctrlKey || event.metaKey) {
+        return;
+      }
+
+      event.preventDefault();
+      void moveFocusByEnter(fieldName, event.shiftKey ? 'previous' : 'next');
+    };
+
+  const handleSelectEnterNavigation = (
+    fieldName: EnterNavigableFieldName,
+    direction: 'next' | 'previous'
+  ) => {
+    void moveFocusByEnter(fieldName, direction);
+  };
+
   const handleSaveAto = async () => {
     const isValid = await trigger([
       'tipoEntrada',
@@ -1162,13 +1268,15 @@ export default function BalcaoPage() {
     setAtosSalvos((previousAtos) => [...previousAtos, newAto]);
     setSelectedIds([newAtoId]);
     setNextAtoId((previousId) => previousId + 1);
+    const defaults = createBalcaoDefaultValues();
+
     reset({
       ...values,
       tipoEntrada: null,
       natureza: null,
       tipoCobranca: null,
       ato: {
-        ...balcaoDefaultValues.ato,
+        ...defaults.ato,
       },
     });
     setServicosSearchTerm('');
@@ -1557,6 +1665,7 @@ export default function BalcaoPage() {
                   onChange={(event: React.ChangeEvent<HTMLInputElement>) => {
                     field.onChange(onlyDigits(event.target.value).slice(0, 14));
                   }}
+                  onKeyDown={handleInputEnterNavigation('documento')}
                   ref={field.ref}
                 />
               )}
@@ -1588,6 +1697,7 @@ export default function BalcaoPage() {
                         normalizeNameForDisplay(event.target.value)
                       );
                     }}
+                    onKeyDown={handleInputEnterNavigation('nome')}
                     ref={field.ref}
                   />
                 )}
@@ -1617,6 +1727,7 @@ export default function BalcaoPage() {
                   onChange={(event: React.ChangeEvent<HTMLInputElement>) => {
                     field.onChange(onlyDigits(event.target.value).slice(0, 11));
                   }}
+                  onKeyDown={handleInputEnterNavigation('contato')}
                   ref={field.ref}
                 />
               )}
@@ -1646,6 +1757,7 @@ export default function BalcaoPage() {
                       ) => {
                         field.onChange(event.target.value);
                       }}
+                      onKeyDown={handleInputEnterNavigation('email')}
                       ref={field.ref}
                       className="w-full"
                     />
@@ -1679,6 +1791,7 @@ export default function BalcaoPage() {
                       ) => {
                         field.onChange(formatHourWithColon(event.target.value));
                       }}
+                      onKeyDown={handleInputEnterNavigation('horarioUrgencia')}
                       ref={field.ref}
                       className="max-w-40"
                     />
@@ -1714,7 +1827,8 @@ export default function BalcaoPage() {
         </CardContainer>
 
         {/* Não sei o nome ainda */}
-        <CardContainer columns={1}>
+        {/* Escondido com propriedade hidden */}
+        <CardContainer columns={1} className="hidden">
           <div className="grid grid-cols-1 gap-4 lg:grid-cols-2 xl:grid-cols-3">
             {/* Naturezas */}
 
@@ -1780,6 +1894,76 @@ export default function BalcaoPage() {
           columns={1}
         >
           <div className="grid grid-cols-1 gap-4 lg:grid-cols-2 xl:grid-cols-3">
+            <Controller
+              name="tipoEntrada"
+              control={control}
+              render={({ field }) => (
+                <CustomSelect
+                  label="Tipo de entradas"
+                  options={tipoEntradaOptions}
+                  placeholder="Selecione uma opção"
+                  error={errors.tipoEntrada}
+                  value={field.value}
+                  onChange={field.onChange}
+                  onBlur={field.onBlur}
+                  onEnterNavigateNext={() => {
+                    handleSelectEnterNavigation('tipoEntrada', 'next');
+                  }}
+                  onEnterNavigatePrevious={() => {
+                    handleSelectEnterNavigation('tipoEntrada', 'previous');
+                  }}
+                  name={field.name}
+                />
+              )}
+            />
+
+            <Controller
+              name="natureza"
+              control={control}
+              render={({ field }) => (
+                <CustomSelect
+                  label="Naturezas"
+                  options={naturezaOptions}
+                  placeholder="Selecione uma opção"
+                  error={errors.natureza}
+                  value={field.value}
+                  onChange={field.onChange}
+                  onBlur={field.onBlur}
+                  onEnterNavigateNext={() => {
+                    handleSelectEnterNavigation('natureza', 'next');
+                  }}
+                  onEnterNavigatePrevious={() => {
+                    handleSelectEnterNavigation('natureza', 'previous');
+                  }}
+                  name={field.name}
+                />
+              )}
+            />
+
+            {/* Tipos de cobrança */}
+            <Controller
+              name="tipoCobranca"
+              control={control}
+              render={({ field }) => (
+                <CustomSelect
+                  label="Tipo de cobrança"
+                  options={tipoCobrancaOptions}
+                  placeholder="Selecione uma opção"
+                  error={errors.tipoCobranca}
+                  value={field.value}
+                  onChange={field.onChange}
+                  onBlur={field.onBlur}
+                  onEnterNavigateNext={() => {
+                    handleSelectEnterNavigation('tipoCobranca', 'next');
+                  }}
+                  onEnterNavigatePrevious={() => {
+                    handleSelectEnterNavigation('tipoCobranca', 'previous');
+                  }}
+                  name={field.name}
+                />
+              )}
+            />
+            
             {/* Valor */}
             <Controller
               name="ato.valorDocumento"
@@ -1799,6 +1983,7 @@ export default function BalcaoPage() {
                   onChange={(event: React.ChangeEvent<HTMLInputElement>) => {
                     field.onChange(currencyMask(event.target.value));
                   }}
+                  onKeyDown={handleInputEnterNavigation('ato.valorDocumento')}
                   ref={field.ref}
                 />
               )}
@@ -1822,6 +2007,7 @@ export default function BalcaoPage() {
                   onChange={(event: React.ChangeEvent<HTMLInputElement>) => {
                     field.onChange(onlyDigits(event.target.value));
                   }}
+                  onKeyDown={handleInputEnterNavigation('ato.protocolo')}
                   ref={field.ref}
                 />
               )}
@@ -1846,6 +2032,7 @@ export default function BalcaoPage() {
                     }
                   }}
                   onBlur={field.onBlur}
+                  onKeyDown={handleInputEnterNavigation('ato.dataEntrada')}
                   ref={field.ref}
                 />
               )}
@@ -1857,8 +2044,15 @@ export default function BalcaoPage() {
             placeholder="Digite a descrição ou código"
             autoComplete="off"
             value={servicosSearchTerm}
+            ref={servicosSearchInputRef}
             onChange={(event: React.ChangeEvent<HTMLInputElement>) => {
               setServicosSearchTerm(event.target.value);
+            }}
+            onKeyDown={(event: React.KeyboardEvent<HTMLInputElement>) => {
+              if (event.key === 'Enter') {
+                // A barra de pesquisa não usa Enter para avançar nem submeter.
+                event.preventDefault();
+              }
             }}
           />
 
@@ -1900,6 +2094,7 @@ export default function BalcaoPage() {
                     const nextValue = Number(onlyDigits(event.target.value));
                     field.onChange(Number.isNaN(nextValue) ? 0 : nextValue);
                   }}
+                  onKeyDown={handleInputEnterNavigation('ato.quantidade')}
                   ref={field.ref}
                 />
               )}
@@ -1923,6 +2118,7 @@ export default function BalcaoPage() {
                     const nextValue = Number(onlyDigits(event.target.value));
                     field.onChange(Number.isNaN(nextValue) ? 0 : nextValue);
                   }}
+                  onKeyDown={handleInputEnterNavigation('ato.nomes')}
                   ref={field.ref}
                 />
               )}
@@ -1946,6 +2142,7 @@ export default function BalcaoPage() {
                     const nextValue = Number(onlyDigits(event.target.value));
                     field.onChange(Number.isNaN(nextValue) ? 0 : nextValue);
                   }}
+                  onKeyDown={handleInputEnterNavigation('ato.paginas')}
                   ref={field.ref}
                 />
               )}
@@ -1969,6 +2166,7 @@ export default function BalcaoPage() {
                     const nextValue = Number(onlyDigits(event.target.value));
                     field.onChange(Number.isNaN(nextValue) ? 0 : nextValue);
                   }}
+                  onKeyDown={handleInputEnterNavigation('ato.vias')}
                   ref={field.ref}
                 />
               )}
@@ -1992,6 +2190,7 @@ export default function BalcaoPage() {
                     const nextValue = Number(onlyDigits(event.target.value));
                     field.onChange(Number.isNaN(nextValue) ? 0 : nextValue);
                   }}
+                  onKeyDown={handleInputEnterNavigation('ato.diligencias')}
                   ref={field.ref}
                 />
               )}
@@ -2053,6 +2252,7 @@ export default function BalcaoPage() {
                 header: 'Protocolo',
                 // sortable: true,
                 widthClassName: 'w-20',
+                align: 'left',
               },
               {
                 key: 'descricao',
@@ -2077,7 +2277,7 @@ export default function BalcaoPage() {
               },
               {
                 key: 'iss',
-                header: 'ISS',
+                header: 'Iss',
                 cellClassName: 'text-right',
                 align: 'center',
               },

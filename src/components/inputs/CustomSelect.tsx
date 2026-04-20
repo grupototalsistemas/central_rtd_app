@@ -97,6 +97,10 @@ export interface CustomSelectProps {
 	onFocus?: React.FocusEventHandler<HTMLButtonElement | HTMLInputElement>;
 	/** Handler de blur do gatilho. */
 	onBlur?: React.FocusEventHandler<HTMLButtonElement | HTMLInputElement>;
+	/** Callback para mover foco ao proximo campo com Enter (quando fechado). */
+	onEnterNavigateNext?: () => void;
+	/** Callback para mover foco ao campo anterior com Shift+Enter (quando fechado). */
+	onEnterNavigatePrevious?: () => void;
 	/** IDs auxiliares de acessibilidade para descricao. */
 	'aria-describedby'?: string;
 	/** Estado aria de erro adicional (alem de `error`). */
@@ -233,6 +237,8 @@ const CustomSelect = React.forwardRef<
 			tabIndex,
 			onBlur,
 			onFocus,
+			onEnterNavigateNext,
+			onEnterNavigatePrevious,
 			'aria-describedby': ariaDescribedBy,
 			'aria-invalid': ariaInvalid,
 		},
@@ -396,6 +402,23 @@ const CustomSelect = React.forwardRef<
 
 						event.preventDefault();
 
+						if (event.key === 'Enter' && !isOpen) {
+							if (event.shiftKey && onEnterNavigatePrevious) {
+								onEnterNavigatePrevious();
+								break;
+							}
+
+							// Em campo fechado e com valor selecionado, Enter confirma e navega.
+							const hasSelectedValue = Boolean(
+								selectedOption && !selectedOption.disabled
+							);
+
+							if (!event.shiftKey && hasSelectedValue && onEnterNavigateNext) {
+								onEnterNavigateNext();
+								break;
+							}
+						}
+
 						if (!isOpen) {
 							openDropdown();
 							break;
@@ -428,7 +451,10 @@ const CustomSelect = React.forwardRef<
 				highlightedIndex,
 				isOpen,
 				moveHighlight,
+				onEnterNavigateNext,
+				onEnterNavigatePrevious,
 				openDropdown,
+				selectedOption,
 				searchable,
 				readOnly,
 			]
