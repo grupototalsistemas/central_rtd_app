@@ -1311,7 +1311,7 @@ export default function BalcaoPage() {
       kind: 'custom',
       title: `Custas - Protocolo ${targetAto.informacoesAto.protocolo}`,
       size: 'lg',
-      className: 'max-h-[90vh] max-w-[min(96vw,1280px)] overflow-auto',
+      className: 'max-h-[90vh] max-w-[min(96vw,1280px)] overflow-auto custom-scrollbar',
       confirmLabel: 'Salvar custas',
       cancelLabel: 'Cancelar',
       showCloseButton: true,
@@ -1563,7 +1563,7 @@ export default function BalcaoPage() {
       confirmLabel: 'Fechar',
       showCloseButton: true,
       size: 'lg',
-      className: 'max-h-[90vh] max-w-[min(96vw,1280px)] overflow-auto',
+      className: 'max-h-[90vh] max-w-[min(96vw,1280px)] overflow-auto custom-scrollbar',
       renderContent: () => (
         <div className="custom-scrollbar max-h-[60vh] overflow-auto rounded-xl bg-(--cor-edit) p-4 ring-1 ring-(--cor-borda)/60 dark:bg-(--dark-cor-edit) dark:ring-(--dark-cor-borda)/65">
           <pre className="whitespace-pre-wrap wrap-break-word text-xs leading-relaxed text-(--cor-texto) dark:text-(--dark-cor-texto)">
