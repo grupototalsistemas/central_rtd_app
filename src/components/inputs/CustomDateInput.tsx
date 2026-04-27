@@ -7,638 +7,592 @@ import { format, isValid, parse } from 'date-fns';
 import flatpickr from 'flatpickr';
 import 'flatpickr/dist/flatpickr.css';
 import { Portuguese } from 'flatpickr/dist/l10n/pt.js';
-import {FocusEvent, ChangeEvent, ForwardedRef, forwardRef, InputHTMLAttributes, MutableRefObject, ReactNode, RefObject, useCallback, useEffect, useId, useMemo, useRef, useState } from 'react';
+import {
+  FocusEvent,
+  ChangeEvent,
+  ForwardedRef,
+  forwardRef,
+  InputHTMLAttributes,
+  MutableRefObject,
+  ReactNode,
+  RefObject,
+  useCallback,
+  useEffect,
+  useId,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import type { FieldError } from 'react-hook-form';
 
 type InputError = boolean | string | FieldError | null | undefined;
-type DatepickerLocale = flatpickr.Options.LocaleKey | Partial<flatpickr.CustomLocale>;
+type DatepickerLocale =
+  | flatpickr.Options.LocaleKey
+  | Partial<flatpickr.CustomLocale>;
 
 type DateValueChangeHandler = (value: string, date: Date | null) => void;
 
-/**
- * Props do `CustomDateInput`.
- *
- * Funcionamento:
- * - Campo textual de data com parsing estrito por formato.
- * - Pode operar com e sem datepicker (`flatpickr`).
- * - Separa formato exibido (`displayFormat`) do valor emitido (`outputFormat`).
- */
-export interface CustomDateInputProps
-	extends Omit<
-		InputHTMLAttributes<HTMLInputElement>,
-		'type' | 'value' | 'defaultValue'
-	> {
-	/** Valor controlado do campo (string de data). */
-	value?: string;
-	/** Valor inicial para modo nao controlado. */
-	defaultValue?: string;
-	/** Rotulo exibido acima do campo. */
-	label?: ReactNode;
-	/** Texto de apoio exibido abaixo quando nao ha erro. */
-	hint?: ReactNode;
-	/** Texto auxiliar abaixo do campo (prioridade sobre `hint`). */
-	helperText?: ReactNode;
-	/** ID customizado para o texto de feedback (aria-describedby). */
-	helperId?: string;
-	/** Estado de erro (boolean, string ou FieldError do react-hook-form). */
-	error?: InputError;
-	/** Estado visual de sucesso quando nao ha erro. */
-	success?: boolean;
-	/** Classe para o container externo (`div` raiz). */
-	containerClassName?: string;
-	/** Classe para o componente de label. */
-	labelClassName?: string;
-	/** Classe adicional aplicada no `<input />`. */
-	inputClassName?: string;
-	/** Classe para o texto de hint/helper/erro. */
-	hintClassName?: string;
-	/** Conteudo renderizado no lado esquerdo (icone, prefixo etc.). */
-	leftAdornment?: ReactNode;
-	/** Conteudo renderizado no lado direito (icone, sufixo etc.). */
-	rightAdornment?: ReactNode;
-	/** Formato visual aplicado no input. Ex.: `dd/MM/yyyy`. */
-	displayFormat?: string;
-	/** Formatos aceitos para parsing manual digitado pelo usuario. */
-	acceptedInputFormats?: readonly string[];
-	/** Formato emitido em `onValueChange`. Se ausente, usa `displayFormat`. */
-	outputFormat?: string;
-	/** Locale do datepicker (`flatpickr`). */
-	locale?: DatepickerLocale;
-	/** Habilita/desabilita a inicializacao do datepicker. */
-	showDatepicker?: boolean;
-	/** Exibe botao de calendario quando datepicker esta ativo. */
-	showCalendarButton?: boolean;
-	/** Define se o datepicker abre automaticamente no foco do input. */
-	openDatepickerOnFocus?: boolean;
-	/** Callback principal com valor formatado e objeto Date normalizado. */
-	onValueChange?: DateValueChangeHandler;
-	/** Callback disparado no blur quando a data digitada e invalida. */
-	onInvalidDate?: (inputValue: string) => void;
+export interface CustomDateInputProps extends Omit<
+  InputHTMLAttributes<HTMLInputElement>,
+  'type' | 'value' | 'defaultValue'
+> {
+  value?: string;
+  defaultValue?: string;
+  label?: ReactNode;
+  hint?: ReactNode;
+  helperText?: ReactNode;
+  helperId?: string;
+  error?: InputError;
+  success?: boolean;
+  containerClassName?: string;
+  labelClassName?: string;
+  inputClassName?: string;
+  hintClassName?: string;
+  leftAdornment?: ReactNode;
+  rightAdornment?: ReactNode;
+  displayFormat?: string;
+  acceptedInputFormats?: readonly string[];
+  outputFormat?: string;
+  locale?: DatepickerLocale;
+  showDatepicker?: boolean;
+  showCalendarButton?: boolean;
+  openDatepickerOnFocus?: boolean;
+  onValueChange?: DateValueChangeHandler;
+  onInvalidDate?: (inputValue: string) => void;
 }
 
 const getErrorMessage = (error: InputError): string | undefined => {
-	if (typeof error === 'string') {
-		return error;
-	}
-
-	if (typeof error === 'object' && error && 'message' in error) {
-		const message = error.message;
-		return typeof message === 'string' ? message : undefined;
-	}
-
-	return undefined;
+  if (typeof error === 'string') return error;
+  if (typeof error === 'object' && error && 'message' in error) {
+    const message = error.message;
+    return typeof message === 'string' ? message : undefined;
+  }
+  return undefined;
 };
 
 const normalizeDate = (date: Date): Date => {
-	const normalized = new Date(date);
-	normalized.setHours(12, 0, 0, 0);
-	return normalized;
+  const normalized = new Date(date);
+  normalized.setHours(12, 0, 0, 0);
+  return normalized;
 };
 
 const parseStrict = (value: string, dateFormat: string): Date | null => {
-	if (!value) {
-		return null;
-	}
-
-	try {
-		const parsed = parse(value, dateFormat, new Date());
-		if (!isValid(parsed)) {
-			return null;
-		}
-
-		if (format(parsed, dateFormat) !== value) {
-			return null;
-		}
-
-		return normalizeDate(parsed);
-	} catch {
-		return null;
-	}
+  if (!value) return null;
+  try {
+    const parsed = parse(value, dateFormat, new Date());
+    if (!isValid(parsed)) return null;
+    if (format(parsed, dateFormat) !== value) return null;
+    return normalizeDate(parsed);
+  } catch {
+    return null;
+  }
 };
 
 const parseWithFormats = (
-	value: string,
-	formats: readonly string[]
+  value: string,
+  formats: readonly string[]
 ): Date | null => {
-	for (const dateFormat of formats) {
-		const parsed = parseStrict(value, dateFormat);
-		if (parsed) {
-			return parsed;
-		}
-	}
-
-	return null;
+  for (const dateFormat of formats) {
+    const parsed = parseStrict(value, dateFormat);
+    if (parsed) return parsed;
+  }
+  return null;
 };
 
 const toFlatpickrFormat = (dateFormat: string): string => {
-	return dateFormat
-		.replaceAll('yyyy', 'Y')
-		.replaceAll('dd', 'd')
-		.replaceAll('MM', 'm');
+  return dateFormat
+    .replaceAll('yyyy', 'Y')
+    .replaceAll('dd', 'd')
+    .replaceAll('MM', 'm');
 };
 
-const formatSafely = (date: Date, dateFormat: string, fallback: string): string => {
-	try {
-		return format(date, dateFormat);
-	} catch {
-		return fallback;
-	}
+const formatSafely = (
+  date: Date,
+  dateFormat: string,
+  fallback: string
+): string => {
+  try {
+    return format(date, dateFormat);
+  } catch {
+    return fallback;
+  }
 };
 
 const resolveDisplayValue = (
-	rawValue: string,
-	parseFormats: readonly string[],
-	displayFormat: string
+  rawValue: string,
+  parseFormats: readonly string[],
+  displayFormat: string
 ): string => {
-	if (!rawValue) {
-		return '';
-	}
-
-	const parsedDate = parseWithFormats(rawValue, parseFormats);
-	if (!parsedDate) {
-		return rawValue;
-	}
-
-	return formatSafely(parsedDate, displayFormat, rawValue);
+  if (!rawValue) return '';
+  const parsedDate = parseWithFormats(rawValue, parseFormats);
+  if (!parsedDate) return rawValue;
+  return formatSafely(parsedDate, displayFormat, rawValue);
 };
 
-const setForwardedRef = <T,>(
-	ref: ForwardedRef<T>,
-	value: T | null
-): void => {
-	if (typeof ref === 'function') {
-		ref(value);
-		return;
-	}
-
-	if (ref) {
-		(ref as RefObject<T | null>).current = value;
-	}
+const setForwardedRef = <T,>(ref: ForwardedRef<T>, value: T | null): void => {
+  if (typeof ref === 'function') {
+    ref(value);
+    return;
+  }
+  if (ref) {
+    (ref as RefObject<T | null>).current = value;
+  }
 };
 
-/**
- * Campo de data com parsing estrito e integracao opcional com calendario.
- *
- * Integracao com react-hook-form + zod:
- * - Recomendado usar `Controller` para sincronizar `value` e `onValueChange`.
- * - O schema zod pode validar formato e obrigatoriedade do valor emitido.
- *
- * @example
- * ```tsx
- * const schema = z.object({
- *   dataNascimento: z
- *     .string()
- *     .min(1, 'Informe a data.')
- *     .regex(/^\d{2}\/\d{2}\/\d{4}$/, 'Formato esperado: dd/MM/yyyy'),
- * });
- *
- * type FormValues = z.infer<typeof schema>;
- *
- * const { control, formState: { errors } } = useForm<FormValues>({
- *   resolver: zodResolver(schema),
- *   defaultValues: { dataNascimento: '' },
- * });
- *
- * <Controller
- *   name="dataNascimento"
- *   control={control}
- *   render={({ field }) => (
- *     <CustomDateInput
- *       label="Data de nascimento"
- *       displayFormat="dd/MM/yyyy"
- *       outputFormat="dd/MM/yyyy"
- *       error={errors.dataNascimento}
- *       value={field.value}
- *       onValueChange={(nextValue) => field.onChange(nextValue)}
- *       onBlur={field.onBlur}
- *       ref={field.ref}
- *     />
- *   )}
- * />
- * ```
- */
 const CustomDateInput = forwardRef<HTMLInputElement, CustomDateInputProps>(
-	(
-		{
-			id,
-			name,
-			label,
-			required,
-			hint,
-			helperText,
-			helperId,
-			error,
-			success = false,
-			disabled = false,
-			readOnly = false,
-			value,
-			defaultValue,
-			onValueChange,
-			onInvalidDate,
-			displayFormat = 'dd/MM/yyyy',
-			acceptedInputFormats = ['dd/MM/yyyy'],
-			outputFormat,
-			locale = Portuguese,
-			showDatepicker = true,
-			showCalendarButton = true,
-			openDatepickerOnFocus = true,
-			containerClassName,
-			labelClassName,
-			inputClassName,
-			hintClassName,
-			leftAdornment,
-			rightAdornment,
-			placeholder,
-			className,
-			onChange,
-			onBlur,
-			'aria-describedby': ariaDescribedBy,
-			'aria-invalid': ariaInvalid,
-			...rest
-		},
-		ref
-	) => {
-		const generatedId = useId();
-		const inputId = id ?? name ?? `custom-date-input-${generatedId}`;
-		const outputDateFormat = outputFormat ?? displayFormat;
+  (
+    {
+      id,
+      name,
+      label,
+      required,
+      hint,
+      helperText,
+      helperId,
+      error,
+      success = false,
+      disabled = false,
+      readOnly = false,
+      value,
+      defaultValue,
+      onValueChange,
+      onInvalidDate,
+      displayFormat = 'dd/MM/yyyy',
+      acceptedInputFormats = ['dd/MM/yyyy'],
+      outputFormat,
+      locale = Portuguese,
+      showDatepicker = true,
+      showCalendarButton = true,
+      openDatepickerOnFocus = true,
+      containerClassName,
+      labelClassName,
+      inputClassName,
+      hintClassName,
+      leftAdornment,
+      rightAdornment,
+      placeholder,
+      className,
+      onChange,
+      onBlur,
+      'aria-describedby': ariaDescribedBy,
+      'aria-invalid': ariaInvalid,
+      ...rest
+    },
+    ref
+  ) => {
+    const generatedId = useId();
+    const inputId = id ?? name ?? `custom-date-input-${generatedId}`;
+    const outputDateFormat = outputFormat ?? displayFormat;
 
-		const parseFormats = useMemo(() => {
-			return Array.from(
-				new Set([displayFormat, outputDateFormat, ...acceptedInputFormats])
-			);
-		}, [acceptedInputFormats, displayFormat, outputDateFormat]);
+    const parseFormats = useMemo(() => {
+      return Array.from(
+        new Set([displayFormat, outputDateFormat, ...acceptedInputFormats])
+      );
+    }, [acceptedInputFormats, displayFormat, outputDateFormat]);
 
-		const isControlled = value !== undefined;
-		const controlledDisplayValue = useMemo(
-			() =>
-				resolveDisplayValue(value ?? '', parseFormats, displayFormat),
-			[value, parseFormats, displayFormat]
-		);
+    const isControlled = value !== undefined;
+    const controlledDisplayValue = useMemo(
+      () => resolveDisplayValue(value ?? '', parseFormats, displayFormat),
+      [value, parseFormats, displayFormat]
+    );
 
-		const [uncontrolledDisplayValue, setUncontrolledDisplayValue] =
-			useState(() =>
-				resolveDisplayValue(defaultValue ?? '', parseFormats, displayFormat)
-			);
+    const [uncontrolledDisplayValue, setUncontrolledDisplayValue] = useState(
+      () => resolveDisplayValue(defaultValue ?? '', parseFormats, displayFormat)
+    );
 
-		const displayValue = isControlled
-			? controlledDisplayValue
-			: uncontrolledDisplayValue;
+    const displayValue = isControlled
+      ? controlledDisplayValue
+      : uncontrolledDisplayValue;
 
-		const inputRef = useRef<HTMLInputElement | null>(null);
-		const pickerRef = useRef<flatpickr.Instance | null>(null);
+    const inputRef = useRef<HTMLInputElement | null>(null);
+    const pickerRef = useRef<flatpickr.Instance | null>(null);
+    
+    // --- NOVO REF ---
+    // Ref para evitar que o onBlur cancele a seleção se o usuário estiver clicando no calendário.
+    const isInteractingWithPicker = useRef(false);
 
-		const errorMessage = getErrorMessage(error);
-		const isError = Boolean(error) && !disabled;
-		const hasSuccess = !isError && success;
-		const feedback = errorMessage ?? helperText ?? hint;
-		const feedbackId = feedback ? helperId ?? `${inputId}-hint` : undefined;
+    const errorMessage = getErrorMessage(error);
+    const isError = Boolean(error) && !disabled;
+    const hasSuccess = !isError && success;
+    const feedback = errorMessage ?? helperText ?? hint;
+    const feedbackId = feedback ? (helperId ?? `${inputId}-hint`) : undefined;
 
-		const resolvedAriaDescribedBy = [ariaDescribedBy, feedbackId]
-			.filter(Boolean)
-			.join(' ')
-			.trim();
+    const resolvedAriaDescribedBy = [ariaDescribedBy, feedbackId]
+      .filter(Boolean)
+      .join(' ')
+      .trim();
 
-		const emitValueChange = useCallback(
-			(date: Date | null) => {
-				if (!onValueChange) {
-					return;
-				}
+    const emitValueChange = useCallback(
+      (date: Date | null) => {
+        if (!onValueChange) return;
 
-				const nextValue = date
-					? formatSafely(date, outputDateFormat, format(date, displayFormat))
-					: '';
+        const nextValue = date
+          ? formatSafely(date, outputDateFormat, format(date, displayFormat))
+          : '';
 
-				if (isControlled && nextValue === (value ?? '')) {
-					return;
-				}
+        if (isControlled && nextValue === (value ?? '')) return;
 
-				onValueChange(nextValue, date);
-			},
-			[displayFormat, isControlled, onValueChange, outputDateFormat, value]
-		);
+        onValueChange(nextValue, date);
+      },
+      [displayFormat, isControlled, onValueChange, outputDateFormat, value]
+    );
 
-		const commitParsedValue = useCallback(
-			(date: Date, syncPicker = true) => {
-				const normalizedDate = normalizeDate(date);
-				const formattedDisplayValue = formatSafely(
-					normalizedDate,
-					displayFormat,
-					''
-				);
+    const commitParsedValue = useCallback(
+      (date: Date, syncPicker = true) => {
+        const normalizedDate = normalizeDate(date);
+        const formattedDisplayValue = formatSafely(
+          normalizedDate,
+          displayFormat,
+          ''
+        );
 
-				if (!isControlled) {
-					setUncontrolledDisplayValue(formattedDisplayValue);
-				}
+        if (!isControlled) {
+          setUncontrolledDisplayValue(formattedDisplayValue);
+        }
 
-				if (syncPicker) {
-					pickerRef.current?.setDate(normalizedDate, false);
-				}
+        if (syncPicker) {
+          pickerRef.current?.setDate(normalizedDate, false);
+        }
 
-				emitValueChange(normalizedDate);
-			},
-			[displayFormat, emitValueChange, isControlled]
-		);
+        emitValueChange(normalizedDate);
+      },
+      [displayFormat, emitValueChange, isControlled]
+    );
 
-		const handleInputChange = (event: ChangeEvent<HTMLInputElement>) => {
-			const nextValue = event.target.value;
+    // --- NOVO EFFECT ---
+    // Registra quando o mouse pressiona o contêiner do flatpickr.
+    useEffect(() => {
+      const handleMouseDown = (e: MouseEvent) => {
+        if (pickerRef.current?.calendarContainer?.contains(e.target as Node)) {
+          isInteractingWithPicker.current = true;
+        }
+      };
 
-			if (!isControlled) {
-				setUncontrolledDisplayValue(nextValue);
-			}
+      const handleMouseUp = () => {
+        // Usa um pequeno delay para garantir que o click complete antes de voltar ao normal.
+        if (isInteractingWithPicker.current) {
+          setTimeout(() => {
+            isInteractingWithPicker.current = false;
+          }, 50);
+        }
+      };
 
-			onChange?.(event);
+      document.addEventListener('mousedown', handleMouseDown, true);
+      document.addEventListener('mouseup', handleMouseUp, true);
 
-			const trimmed = nextValue.trim();
-			if (!trimmed) {
-				pickerRef.current?.clear();
-				emitValueChange(null);
-				return;
-			}
+      return () => {
+        document.removeEventListener('mousedown', handleMouseDown, true);
+        document.removeEventListener('mouseup', handleMouseUp, true);
+      };
+    }, []);
 
-			const parsedDate = parseWithFormats(trimmed, parseFormats);
-			if (!parsedDate) {
-				emitValueChange(null);
-				return;
-			}
+    const handleInputChange = (event: ChangeEvent<HTMLInputElement>) => {
+      const nextValue = event.target.value;
 
-			commitParsedValue(parsedDate);
-		};
+      if (!isControlled) {
+        setUncontrolledDisplayValue(nextValue);
+      }
 
-		const handleInputBlur = (event: FocusEvent<HTMLInputElement>) => {
-			onBlur?.(event);
+      onChange?.(event);
 
-			const trimmed = event.currentTarget.value.trim();
-			if (!trimmed) {
-				if (!isControlled) {
-					setUncontrolledDisplayValue('');
-				}
-				emitValueChange(null);
-				return;
-			}
+      const trimmed = nextValue.trim();
+      if (!trimmed) {
+        pickerRef.current?.clear();
+        emitValueChange(null);
+        return;
+      }
 
-			const parsedDate = parseWithFormats(trimmed, parseFormats);
-			if (!parsedDate) {
-				onInvalidDate?.(trimmed);
-				return;
-			}
+      const parsedDate = parseWithFormats(trimmed, parseFormats);
+      if (!parsedDate) {
+        emitValueChange(null);
+        return;
+      }
 
-			commitParsedValue(parsedDate);
-		};
+      commitParsedValue(parsedDate);
+    };
 
-		const handlePickerChange = useCallback(
-			(selectedDates: Date[]) => {
-				const selectedDate = selectedDates[0] ?? null;
-				if (!selectedDate) {
-					if (!isControlled) {
-						setUncontrolledDisplayValue('');
-					}
-					emitValueChange(null);
-					return;
-				}
+    const handleInputBlur = (event: FocusEvent<HTMLInputElement>) => {
+      onBlur?.(event);
 
-				commitParsedValue(selectedDate, false);
-			},
-			[commitParsedValue, emitValueChange, isControlled]
-		);
+      // --- NOVA CONDIÇÃO ---
+      // Se o blur ocorreu porque o usuário está clicando no calendário, abortamos.
+      if (isInteractingWithPicker.current) {
+        return;
+      }
 
-		const positionPicker = useCallback(
-			(instance: flatpickr.Instance) => {
-				const inputElement = inputRef.current;
-				const calendarElement = instance.calendarContainer;
+      const trimmed = event.currentTarget.value.trim();
+      if (!trimmed) {
+        if (!isControlled) {
+          setUncontrolledDisplayValue('');
+        }
+        emitValueChange(null);
+        return;
+      }
 
-				if (!inputElement || !calendarElement) {
-					return;
-				}
+      const parsedDate = parseWithFormats(trimmed, parseFormats);
+      if (!parsedDate) {
+        onInvalidDate?.(trimmed);
+        return;
+      }
 
-				const viewportPadding = 8;
-				const verticalGap = 8;
+      commitParsedValue(parsedDate);
+    };
 
-				const inputRect = inputElement.getBoundingClientRect();
-				const calendarRect = calendarElement.getBoundingClientRect();
-				const calendarHeight = calendarRect.height || 320;
-				const calendarWidth = calendarRect.width || 307;
+    const isSyncingFromPickerRef = useRef(false);
 
-				const spaceBelow = window.innerHeight - inputRect.bottom - verticalGap;
-				const spaceAbove = inputRect.top - verticalGap;
-				const shouldOpenBelow =
-					spaceBelow >= calendarHeight || spaceBelow >= spaceAbove;
+    const handlePickerChange = useCallback(
+      (selectedDates: Date[]) => {
+        const selectedDate = selectedDates[0] ?? null;
 
-				const rawTop = shouldOpenBelow
-					? inputRect.bottom + window.scrollY + verticalGap
-					: inputRect.top + window.scrollY - calendarHeight - verticalGap;
+        isSyncingFromPickerRef.current = true;
 
-				const minLeft = window.scrollX + viewportPadding;
-				const maxLeft =
-					window.scrollX + window.innerWidth - calendarWidth - viewportPadding;
-				const targetLeft = inputRect.left + window.scrollX;
+        if (!selectedDate) {
+          if (!isControlled) {
+            setUncontrolledDisplayValue('');
+          }
+          emitValueChange(null);
+          isSyncingFromPickerRef.current = false;
+          return;
+        }
 
-				const boundedLeft = Math.min(
-					Math.max(targetLeft, minLeft),
-					Math.max(minLeft, maxLeft)
-				);
+        commitParsedValue(selectedDate, false);
 
-				calendarElement.style.position = 'absolute';
-				calendarElement.style.top = `${Math.max(
-					window.scrollY + viewportPadding,
-					rawTop
-				)}px`;
-				calendarElement.style.left = `${boundedLeft}px`;
-			},
-			[]
-		);
+        // Reseta após o ciclo de render do React
+        setTimeout(() => {
+          isSyncingFromPickerRef.current = false;
+        }, 0);
+      },
+      [commitParsedValue, emitValueChange, isControlled]
+    );
 
-		useEffect(() => {
-			const inputElement = inputRef.current;
-			if (!inputElement) {
-				return;
-			}
+    const positionPicker = useCallback((instance: flatpickr.Instance) => {
+      const inputElement = inputRef.current;
+      const calendarElement = instance.calendarContainer;
 
-			if (!showDatepicker || disabled || readOnly) {
-				pickerRef.current?.destroy();
-				pickerRef.current = null;
-				return;
-			}
+      if (!inputElement || !calendarElement) return;
 
-			const picker = flatpickr(inputElement, {
-				allowInput: true,
-				disableMobile: true,
-				appendTo: document.body,
-				clickOpens: openDatepickerOnFocus,
-				locale,
-				monthSelectorType: 'static',
-				position: (instance) => {
-					positionPicker(instance);
-				},
-				positionElement: inputElement,
-				dateFormat: toFlatpickrFormat(displayFormat),
-				onOpen: (_, __, instance) => {
-					positionPicker(instance);
-				},
-				onReady: (_, __, instance) => {
-					positionPicker(instance);
-				},
-				onChange: handlePickerChange,
-			});
+      const viewportPadding = 8;
+      const verticalGap = 8;
 
-			pickerRef.current = Array.isArray(picker) ? picker[0] : picker;
+      const inputRect = inputElement.getBoundingClientRect();
+      const calendarRect = calendarElement.getBoundingClientRect();
+      const calendarHeight = calendarRect.height || 320;
+      const calendarWidth = calendarRect.width || 307;
 
-			return () => {
-				pickerRef.current?.destroy();
-				pickerRef.current = null;
-			};
-		}, [
-			disabled,
-			displayFormat,
-			handlePickerChange,
-			locale,
-			openDatepickerOnFocus,
-			positionPicker,
-			readOnly,
-			showDatepicker,
-		]);
+      const spaceBelow = window.innerHeight - inputRect.bottom - verticalGap;
+      const spaceAbove = inputRect.top - verticalGap;
+      const shouldOpenBelow =
+        spaceBelow >= calendarHeight || spaceBelow >= spaceAbove;
 
-		useEffect(() => {
-			if (!pickerRef.current) {
-				return;
-			}
+      const rawTop = shouldOpenBelow
+        ? inputRect.bottom + window.scrollY + verticalGap
+        : inputRect.top + window.scrollY - calendarHeight - verticalGap;
 
-			if (!displayValue.trim()) {
-				pickerRef.current.clear();
-				return;
-			}
+      const minLeft = window.scrollX + viewportPadding;
+      const maxLeft =
+        window.scrollX + window.innerWidth - calendarWidth - viewportPadding;
+      const targetLeft = inputRect.left + window.scrollX;
 
-			const parsedDate = parseWithFormats(displayValue.trim(), parseFormats);
-			if (!parsedDate) {
-				return;
-			}
+      const boundedLeft = Math.min(
+        Math.max(targetLeft, minLeft),
+        Math.max(minLeft, maxLeft)
+      );
 
-			pickerRef.current.setDate(parsedDate, false);
-		}, [displayValue, parseFormats]);
+      calendarElement.style.position = 'absolute';
+      calendarElement.style.top = `${Math.max(
+        window.scrollY + viewportPadding,
+        rawTop
+      )}px`;
+      calendarElement.style.left = `${boundedLeft}px`;
+    }, []);
 
-		const assignInputRef = useCallback(
-			(node: HTMLInputElement | null) => {
-				inputRef.current = node;
-				setForwardedRef(ref, node);
-			},
-			[ref]
-		);
+    useEffect(() => {
+      const inputElement = inputRef.current;
+      if (!inputElement) return;
 
-		const shouldRenderCalendarButton =
-			showDatepicker && showCalendarButton && !disabled;
+      if (!showDatepicker || disabled || readOnly) {
+        pickerRef.current?.destroy();
+        pickerRef.current = null;
+        return;
+      }
 
-		const textLikeBaseClasses = cn(
-			'h-11 w-full rounded-lg border border-transparent appearance-none px-4 py-2.5 text-sm',
-			'placeholder:text-gray-400 transition-all duration-200',
-			'focus:outline-hidden dark:placeholder:text-white/30'
-		);
+      const picker = flatpickr(inputElement, {
+        allowInput: true,
+        disableMobile: true,
+        appendTo: document.body,
+        clickOpens: openDatepickerOnFocus,
+        locale,
+        monthSelectorType: 'static',
+        position: (instance) => {
+          positionPicker(instance);
+        },
+        positionElement: inputElement,
+        dateFormat: toFlatpickrFormat(displayFormat),
+        onOpen: (_, __, instance) => {
+          positionPicker(instance);
+        },
+        onReady: (_, __, instance) => {
+          positionPicker(instance);
+        },
+        onChange: handlePickerChange,
+      });
 
-		const textLikeStateClasses = disabled
-			? 'cursor-not-allowed bg-gray-100 text-gray-500 opacity-80 ring-1 ring-(--cor-borda)/40 dark:bg-gray-800 dark:text-gray-400 dark:ring-(--dark-cor-borda)/45'
-			: isError
-				? 'bg-(--cor-edit) text-error-800 ring-1 ring-error-500/35 focus:ring-2 focus:ring-error-500/45 dark:bg-(--dark-cor-edit) dark:text-error-400 dark:ring-error-400/45 dark:focus:ring-error-400/55'
-				: hasSuccess
-					? 'bg-(--cor-edit) text-(--cor-texto) ring-1 ring-success-400/45 focus:ring-2 focus:ring-success-500/45 dark:bg-(--dark-cor-edit) dark:text-(--dark-cor-texto) dark:ring-success-500/45 dark:focus:ring-success-500/55'
-					: 'bg-(--cor-edit) text-(--cor-texto) ring-1 ring-(--cor-borda)/60 focus:ring-2 focus:ring-brand-500/28 dark:bg-(--dark-cor-edit) dark:text-(--dark-cor-texto) dark:ring-(--dark-cor-borda)/65 dark:focus:ring-brand-500/35';
+      pickerRef.current = Array.isArray(picker) ? picker[0] : picker;
 
-		const paddingClasses = cn({
-			'pl-10': Boolean(leftAdornment),
-			'pr-10': Boolean(rightAdornment) && !shouldRenderCalendarButton,
-			'pr-20': shouldRenderCalendarButton && !rightAdornment,
-			'pr-28': shouldRenderCalendarButton && Boolean(rightAdornment),
-		});
+      return () => {
+        pickerRef.current?.destroy();
+        pickerRef.current = null;
+      };
+    }, [
+      disabled,
+      displayFormat,
+      handlePickerChange,
+      locale,
+      openDatepickerOnFocus,
+      positionPicker,
+      readOnly,
+      showDatepicker,
+    ]);
 
-		return (
-			<div className={cn('w-full', containerClassName)}>
-				{label ? (
-					<Label htmlFor={inputId} className={labelClassName}>
-						<span className="inline-flex items-center gap-1 text-(--cor-texto) dark:text-(--dark-cor-texto)">
-							{label}
-							{required ? (
-								<span aria-hidden="true" className="text-error-500">
-									*
-								</span>
-							) : null}
-						</span>
-					</Label>
-				) : null}
+    useEffect(() => {
+      if (!pickerRef.current) return;
+      if (isSyncingFromPickerRef.current) return;
 
-				<div className="relative">
-					{leftAdornment ? (
-						<span className="pointer-events-none absolute inset-y-0 left-3 flex items-center text-gray-400 dark:text-gray-500">
-							{leftAdornment}
-						</span>
-					) : null}
+      if (!displayValue.trim()) {
+        pickerRef.current.clear();
+        return;
+      }
 
-					<input
-						id={inputId}
-						ref={assignInputRef}
-						name={name}
-						type="text"
-						required={required}
-						disabled={disabled}
-						readOnly={readOnly}
-						value={displayValue}
-						inputMode="numeric"
-						placeholder={placeholder ?? displayFormat}
-						aria-invalid={isError || ariaInvalid ? true : undefined}
-						aria-describedby={resolvedAriaDescribedBy || undefined}
-						onChange={handleInputChange}
-						onBlur={handleInputBlur}
-						className={cn(
-							textLikeBaseClasses,
-							textLikeStateClasses,
-							readOnly &&
-								'read-only:cursor-default read-only:bg-(--cor-edit) read-only:dark:bg-(--dark-cor-edit)',
-							paddingClasses,
-							className,
-							inputClassName
-						)}
-						{...rest}
-					/>
+      const parsedDate = parseWithFormats(displayValue.trim(), parseFormats);
+      if (!parsedDate) return;
 
-					{rightAdornment ? (
-						<span
-							className={cn(
-								'pointer-events-none absolute inset-y-0 flex items-center text-gray-400 dark:text-gray-500',
-								shouldRenderCalendarButton ? 'right-11' : 'right-3'
-							)}
-						>
-							{rightAdornment}
-						</span>
-					) : null}
+      pickerRef.current.setDate(parsedDate, false);
+    }, [displayValue, parseFormats]);
 
-					{shouldRenderCalendarButton ? (
-						<button
-							type="button"
-							onClick={() => pickerRef.current?.open()}
-							disabled={readOnly}
-							aria-label="Abrir calendario"
-							className="absolute inset-y-0 right-3 flex items-center text-gray-400 transition-colors hover:text-(--central-azul) focus:outline-hidden focus:text-(--central-azul) disabled:cursor-not-allowed disabled:opacity-50 dark:text-gray-500 dark:hover:text-(--dark-cor-texto) dark:focus:text-(--dark-cor-texto)"
-						>
-							<CalenderIcon />
-						</button>
-					) : null}
-				</div>
+    const assignInputRef = useCallback(
+      (node: HTMLInputElement | null) => {
+        inputRef.current = node;
+        setForwardedRef(ref, node);
+      },
+      [ref]
+    );
 
-				{feedback ? (
-					<p
-						id={feedbackId}
-						className={cn(
-							'mt-1.5 text-xs',
-							isError
-								? 'text-error-500'
-								: hasSuccess
-									? 'text-success-600 dark:text-success-400'
-									: 'text-gray-500 dark:text-gray-400',
-							hintClassName
-						)}
-					>
-						{feedback}
-					</p>
-				) : null}
-			</div>
-		);
-	}
+    const shouldRenderCalendarButton =
+      showDatepicker && showCalendarButton && !disabled;
+
+    const textLikeBaseClasses = cn(
+      'h-11 w-full rounded-lg border border-transparent appearance-none px-4 py-2.5 text-sm',
+      'placeholder:text-gray-400 transition-all duration-200',
+      'focus:outline-hidden dark:placeholder:text-white/30'
+    );
+
+    const textLikeStateClasses = disabled
+      ? 'cursor-not-allowed bg-gray-100 text-gray-500 opacity-80 ring-1 ring-(--cor-borda)/40 dark:bg-gray-800 dark:text-gray-400 dark:ring-(--dark-cor-borda)/45'
+      : isError
+        ? 'bg-(--cor-edit) text-error-800 ring-1 ring-error-500/35 focus:ring-2 focus:ring-error-500/45 dark:bg-(--dark-cor-edit) dark:text-error-400 dark:ring-error-400/45 dark:focus:ring-error-400/55'
+        : hasSuccess
+          ? 'bg-(--cor-edit) text-(--cor-texto) ring-1 ring-success-400/45 focus:ring-2 focus:ring-success-500/45 dark:bg-(--dark-cor-edit) dark:text-(--dark-cor-texto) dark:ring-success-500/45 dark:focus:ring-success-500/55'
+          : 'bg-(--cor-edit) text-(--cor-texto) ring-1 ring-(--cor-borda)/60 focus:ring-2 focus:ring-brand-500/28 dark:bg-(--dark-cor-edit) dark:text-(--dark-cor-texto) dark:ring-(--dark-cor-borda)/65 dark:focus:ring-brand-500/35';
+
+    const paddingClasses = cn({
+      'pl-10': Boolean(leftAdornment),
+      'pr-10': Boolean(rightAdornment) && !shouldRenderCalendarButton,
+      'pr-20': shouldRenderCalendarButton && !rightAdornment,
+      'pr-28': shouldRenderCalendarButton && Boolean(rightAdornment),
+    });
+
+    return (
+      <div className={cn('w-full', containerClassName)}>
+        {label ? (
+          <Label htmlFor={inputId} className={labelClassName}>
+            <span className="inline-flex items-center gap-1 text-(--cor-texto) dark:text-(--dark-cor-texto)">
+              {label}
+              {required ? (
+                <span aria-hidden="true" className="text-error-500">
+                  *
+                </span>
+              ) : null}
+            </span>
+          </Label>
+        ) : null}
+
+        <div className="relative">
+          {leftAdornment ? (
+            <span className="pointer-events-none absolute inset-y-0 left-3 flex items-center text-gray-400 dark:text-gray-500">
+              {leftAdornment}
+            </span>
+          ) : null}
+
+          <input
+            id={inputId}
+            ref={assignInputRef}
+            name={name}
+            type="text"
+            required={required}
+            disabled={disabled}
+            readOnly={readOnly}
+            value={displayValue}
+            inputMode="numeric"
+            placeholder={placeholder ?? displayFormat}
+            aria-invalid={isError || ariaInvalid ? true : undefined}
+            aria-describedby={resolvedAriaDescribedBy || undefined}
+            onChange={handleInputChange}
+            onBlur={handleInputBlur}
+            className={cn(
+              textLikeBaseClasses,
+              textLikeStateClasses,
+              readOnly &&
+                'read-only:cursor-default read-only:bg-(--cor-edit) read-only:dark:bg-(--dark-cor-edit)',
+              paddingClasses,
+              className,
+              inputClassName
+            )}
+            {...rest}
+          />
+
+          {rightAdornment ? (
+            <span
+              className={cn(
+                'pointer-events-none absolute inset-y-0 flex items-center text-gray-400 dark:text-gray-500',
+                shouldRenderCalendarButton ? 'right-11' : 'right-3'
+              )}
+            >
+              {rightAdornment}
+            </span>
+          ) : null}
+
+          {shouldRenderCalendarButton ? (
+            <button
+              type="button"
+              onClick={() => pickerRef.current?.open()}
+              disabled={readOnly}
+              aria-label="Abrir calendario"
+              className="absolute inset-y-0 right-3 flex items-center text-gray-400 transition-colors hover:text-(--central-azul) focus:text-(--central-azul) focus:outline-hidden disabled:cursor-not-allowed disabled:opacity-50 dark:text-gray-500 dark:hover:text-(--dark-cor-texto) dark:focus:text-(--dark-cor-texto)"
+            >
+              <CalenderIcon />
+            </button>
+          ) : null}
+        </div>
+
+        {feedback ? (
+          <p
+            id={feedbackId}
+            className={cn(
+              'mt-1.5 text-xs',
+              isError
+                ? 'text-error-500'
+                : hasSuccess
+                  ? 'text-success-600 dark:text-success-400'
+                  : 'text-gray-500 dark:text-gray-400',
+              hintClassName
+            )}
+          >
+            {feedback}
+          </p>
+        ) : null}
+      </div>
+    );
+  }
 );
 
 CustomDateInput.displayName = 'CustomDateInput';
