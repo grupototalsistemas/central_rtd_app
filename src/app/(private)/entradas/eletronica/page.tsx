@@ -15,6 +15,8 @@ import type {
   OperadorId,
   OperadorPayload,
 } from '@/components/operadores/types';
+// Services
+import { PerfilService } from '@/service/eletronicas.service';
 
 // Definição dos operadores disponíveis na página de eletrônica
 type OperadorDefinition = {
@@ -40,6 +42,7 @@ const OPERADORES = {
 
 // Lista de IDs dos operadores para facilitar a renderização dos botões
 const OPERADOR_IDS = Object.keys(OPERADORES) as OperadorId[];
+
 
 
 export default function EletronicaPage() {
