@@ -1,27 +1,29 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useMemo, useState } from 'react';
 
 // Componentes
-import PageTitle from '@/components/page/PageTitle';
-import CardContainer from '@/components/card/CardContainer';
 import CustomButton from '@/components/buttons/CustomButton';
+import CardContainer from '@/components/card/CardContainer';
 import { Ecartorio } from '@/components/operadores/ecartorio';
 import { Onrtdpj } from '@/components/operadores/onrtdpj';
 import { Rtdbrasil } from '@/components/operadores/rtdbrasil';
-import { loadOperadorMockPayload } from '@/components/operadores/operadoresConfig';
 import type {
   OperadorComponentProps,
   OperadorId,
   OperadorPayload,
 } from '@/components/operadores/types';
+import PageTitle from '@/components/page/PageTitle';
+import { RootState } from '@/store/rootReducer';
+import { fonteEletronica } from '@/types/eletronica.type';
+import { useSelector } from 'react-redux';
 // Services
-import { PerfilService } from '@/service/eletronicas.service';
 
 // Definição dos operadores disponíveis na página de eletrônica
 type OperadorDefinition = {
   label: string;
   component: React.ComponentType<OperadorComponentProps>;
+  fonte: fonteEletronica;
 };
 
 // Definição dos operadores e seus componentes correspondentes
@@ -29,58 +31,38 @@ const OPERADORES = {
   ecartorio: {
     label: 'e-Cartório',
     component: Ecartorio,
+    fonte: fonteEletronica.ECARTORIO,
   },
   onrtdpj: {
     label: 'ONRTDPJ',
     component: Onrtdpj,
+    fonte: fonteEletronica.ONRTDPJ,
   },
   rtdbrasil: {
     label: 'RTDBRASIL',
     component: Rtdbrasil,
+    fonte: fonteEletronica.RTDBRASIL,
   },
 } satisfies Record<OperadorId, OperadorDefinition>;
 
 // Lista de IDs dos operadores para facilitar a renderização dos botões
 const OPERADOR_IDS = Object.keys(OPERADORES) as OperadorId[];
 
-
-
 export default function EletronicaPage() {
   const [operadorAtivo, setOperadorAtivo] = useState<OperadorId>('ecartorio');
-  const [payloadPorOperador, setPayloadPorOperador] = useState<
-    Partial<Record<OperadorId, OperadorPayload[]>>
-  >({});
 
-  useEffect(() => {
-    let isMounted = true;
+  const { entradas } = useSelector((state: RootState) => state.eletronica);
 
-    if (payloadPorOperador[operadorAtivo] !== undefined) {
-      return;
-    }
-
-    const loadPayload = async () => {
-      const payload = await loadOperadorMockPayload(operadorAtivo);
-
-      if (!isMounted) {
-        return;
-      }
-
-      setPayloadPorOperador((estadoAtual) => ({
-        ...estadoAtual,
-        [operadorAtivo]: payload,
-      }));
-    };
-
-    void loadPayload();
-
-    return () => {
-      isMounted = false;
-    };
-  }, [operadorAtivo, payloadPorOperador]);
+  const payloadOperadorAtivo = useMemo(
+    () =>
+      entradas
+        .filter((e) => e.fonte === OPERADORES[operadorAtivo].fonte)
+        .map((e) => e as unknown as OperadorPayload),
+    [entradas, operadorAtivo]
+  );
 
   const operadorAtivoDefinition = OPERADORES[operadorAtivo];
   const OperadorAtivoComponent = operadorAtivoDefinition.component;
-  const payloadOperadorAtivo = payloadPorOperador[operadorAtivo] ?? [];
 
   return (
     <PageTitle title="Eletrônica" description="Lançamentos">

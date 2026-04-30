@@ -1,4 +1,5 @@
 import { combineReducers } from '@reduxjs/toolkit';
+import EletronicaReducer from './slices/eletronicaSlice';
 import UsuarioEmpresasSlice from './slices/empresasUsuarioSlice';
 import PerfilPermissaoReducer from './slices/perfilPermissaoSlice';
 import UsuarioReducer from './slices/usuarioSlice';
@@ -7,6 +8,7 @@ export const appReducer = combineReducers({
   perfilPermissao: PerfilPermissaoReducer,
   usuario: UsuarioReducer,
   usuarioEmpresas: UsuarioEmpresasSlice,
+  eletronica: EletronicaReducer,
 });
 
 export type RootState = ReturnType<typeof appReducer>;

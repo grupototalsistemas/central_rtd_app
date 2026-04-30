@@ -142,21 +142,41 @@ export const ADAPTERS = {
     fallbackId: number
   ): EntradaEletronicaRow =>
     toBaseRow(payload, fallbackId, {
-      id: pickFirst(payload, ['requestId', 'id']),
-      solicitante: pickFirst(payload, ['requester.name', 'solicitante']),
-      documento: pickFirst(payload, ['requester.document', 'documento']),
-      matricula: pickFirst(payload, ['registry.matricula', 'matricula']),
+      id: pickFirst(payload, ['requestId', 'id', 'protocolo']),
+      solicitante: pickFirst(payload, [
+        'requester.name',
+        'solicitante',
+        'cliente.nome',
+      ]),
+      documento: pickFirst(payload, [
+        'requester.document',
+        'documento',
+        'cliente.documento',
+      ]),
+      matricula: pickFirst(payload, [
+        'registry.matricula',
+        'matricula',
+        'ecertidao.nuRgi',
+      ]),
       data_do_pedido: formatDate(
-        asString(pickFirst(payload, ['requestedAt', 'data_do_pedido']))
+        asString(
+          pickFirst(payload, ['requestedAt', 'data_do_pedido', 'dataPedido'])
+        )
       ),
       protocolo_do_pedido: pickFirst(payload, [
         'protocol',
         'protocolo_do_pedido',
+        'protocolo',
       ]),
       total: formatCurrency(
-        asNumber(pickFirst(payload, ['amountTotal', 'total'])) ?? 0
+        asNumber(pickFirst(payload, ['amountTotal', 'total', 'valorTotal'])) ??
+          0
       ),
-      status_onr: pickFirst(payload, ['status.label', 'status_onr']),
+      status_onr: pickFirst(payload, [
+        'status.label',
+        'status_onr',
+        'status.nome',
+      ]),
       imovel: pickFirst(payload, ['property.hasRealEstate', 'imovel']),
     }),
 
@@ -165,19 +185,38 @@ export const ADAPTERS = {
     fallbackId: number
   ): EntradaEletronicaRow =>
     toBaseRow(payload, fallbackId, {
-      id: pickFirst(payload, ['meta.codigoSolicitacao', 'id']),
-      solicitante: pickFirst(payload, ['pessoa.nomeCompleto', 'solicitante']),
-      documento: pickFirst(payload, ['pessoa.cpfCnpj', 'documento']),
+      id: pickFirst(payload, ['meta.codigoSolicitacao', 'id', 'protocolo']),
+      solicitante: pickFirst(payload, [
+        'pessoa.nomeCompleto',
+        'solicitante',
+        'cliente.nome',
+      ]),
+      documento: pickFirst(payload, [
+        'pessoa.cpfCnpj',
+        'documento',
+        'cliente.cpfCnpj',
+      ]),
       matricula: pickFirst(payload, ['registro.numero', 'matricula']),
       data_do_pedido: formatDate(
-        asString(pickFirst(payload, ['datas.pedido', 'data_do_pedido']))
+        asString(
+          pickFirst(payload, ['datas.pedido', 'data_do_pedido', 'dataPedido'])
+        )
       ),
       protocolo_do_pedido: pickFirst(payload, [
         'registro.protocolo',
         'protocolo_do_pedido',
+        'protocolo',
       ]),
-      total: pickFirst(payload, ['custas.totalFormatado', 'total']),
-      status_onr: pickFirst(payload, ['onr.statusAtual', 'status_onr']),
+      total: pickFirst(payload, [
+        'custas.totalFormatado',
+        'total',
+        'valorTotal',
+      ]),
+      status_onr: pickFirst(payload, [
+        'onr.statusAtual',
+        'status_onr',
+        'status.nome',
+      ]),
       imovel: pickFirst(payload, ['registro.imovel', 'imovel']),
     }),
 
@@ -186,26 +225,38 @@ export const ADAPTERS = {
     fallbackId: number
   ): EntradaEletronicaRow =>
     toBaseRow(payload, fallbackId, {
-      id: pickFirst(payload, ['pedido.idInterno', 'id']),
+      id: pickFirst(payload, ['pedido.idInterno', 'id', 'protocolo']),
       solicitante: pickFirst(payload, ['cliente.nome', 'solicitante']),
       documento: pickFirst(payload, [
         'cliente.documentoPrincipal',
         'documento',
+        'cliente.cpfCnpj',
       ]),
       matricula: pickFirst(payload, ['pedido.matriculaAlvo', 'matricula']),
       data_do_pedido: formatDate(
         asString(
-          pickFirst(payload, ['pedido.dataCriacaoIso', 'data_do_pedido'])
+          pickFirst(payload, [
+            'pedido.dataCriacaoIso',
+            'data_do_pedido',
+            'dataPedido',
+          ])
         )
       ),
       protocolo_do_pedido: pickFirst(payload, [
         'pedido.protocoloExterno',
         'protocolo_do_pedido',
+        'protocolo',
       ]),
       total: formatCurrency(
-        (asNumber(pickFirst(payload, ['financeiro.totalCentavos'])) ?? 0) / 100
+        (asNumber(pickFirst(payload, ['financeiro.totalCentavos'])) ?? 0) /
+          100 ||
+          (asNumber(pickFirst(payload, ['valorTotal'])) ?? 0)
       ),
-      status_onr: pickFirst(payload, ['integracao.onrStatus', 'status_onr']),
+      status_onr: pickFirst(payload, [
+        'integracao.onrStatus',
+        'status_onr',
+        'status.nome',
+      ]),
       imovel: pickFirst(payload, ['pedido.temImovel', 'imovel']),
     }),
 } satisfies Record<
